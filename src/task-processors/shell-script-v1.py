@@ -295,10 +295,9 @@ class ShellScript(TaskProcessor):
                     if task.spec['raiseExceptionOnError'] is True:
                         raise Exception('{} - Task Processing failed Stacktrace was logged.'.format(log_header))
             if len(task_processing_exception_formatted_stacktrace) > 0:
-                nl = ''
-                if len(result_stderr) == 0:
-                    nl = '\n'
-                result_stderr = '{}\nProcessing Exception Stacktrace:\n-------------------------------\n{}\n-------------------------------'.format(
+                if len(result_stderr) != 0:
+                    result_stderr = '{}\n\n'.format(result_stderr)
+                result_stderr = '{}Processing Exception Stacktrace:\n-------------------------------\n{}\n-------------------------------'.format(
                     result_stderr,
                     task_processing_exception_formatted_stacktrace
                 )
