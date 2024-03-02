@@ -166,8 +166,9 @@ class ShellScript(TaskProcessor):
         Returns:
             An updated `KeyValueStore`.
 
-            * Output from STDOUT will be saved under the key: `task.task_id:command:context:processing:result:STDOUT`
-            * Output from STDERR will be saved under the key: `task.task_id:command:context:processing:result:STDERR`
+            * Output from STDOUT will be saved under the key: `task.kind:task.task_id:command:context:processing:result:STDOUT`
+            * Output from STDERR will be saved under the key: `task.kind:task.task_id:command:context:processing:result:STDERR`
+            * Script exit code will be saved under the key: `task.kind:task.task_id:command:context:processing:result:EXIT_CODE`
 
         Raises:
             Exception: As determined by the processing logic.
@@ -210,6 +211,78 @@ class ShellScript(TaskProcessor):
                 script_source = self._load_source_from_file()
             self.log(message='script_source:\n--------------------\n{}\n--------------------'.format(script_source), build_log_message_header=False, level='debug', header=log_header)
             work_file = self._create_work_file(source=script_source)
+
+            ###
+            ### EXECUTE
+            ###
+            result = None
+            os.chmod(work_file, 0o700)
+            result = subprocess.run('{}'.format(work_file), check=True, capture_output=True)   # Returns CompletedProcess
+
+            ###
+            ### STORE VALUES
+            ###
+            if result is not None:
+                result_stdout = result.stdout
+                result_exit_code = result.returncode
+                self.log(message='   Storing Variables', build_log_message_header=False, level='info', header=log_header)                
+                value_stdout_encoding = self.__detect_encoding(input_str=result.stdout)
+                value_stderr_encoding = self.__detect_encoding(input_str=result.stdout)
+                result_stderr = result.stderr
+
+                if 'convertOutputToText' in self.spec:
+                    if self.spec['convertOutputToText'] is True:
+                        if value_stdout_encoding is not None:
+                            result_stdout = result_stdout.decode(value_stdout_encoding)
+                        if value_stderr_encoding is not None:
+                            result_stderr = result_stderr.decode(value_stderr_encoding)
+
+                if 'stripNewline' in self.spec:
+                    if self.spec['stripNewline'] is True:
+                        try:
+                            if result_stdout is not None:
+                                result_stdout = result_stdout.replace('\n', '')
+                                result_stdout = result_stdout.replace('\r', '')
+                            if result_stderr is not None:
+                                result_stderr = result_stderr.replace('\n', '')
+                                result_stderr = result_stderr.replace('\r', '')
+                        except:
+                            traceback.print_exc()
+                            self.log(message='Could not remove newline characters after "StripNewline" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
+
+                if 'convertRepeatingSpaces' in self.spec:
+                    if self.spec['convertRepeatingSpaces'] is True:
+                        try:
+                            if result_stdout is not None:
+                                result_stdout = ' '.join(result_stdout.split())
+                            if result_stderr is not None:
+                                result_stderr = ' '.join(result_stderr.split())
+                        except:
+                            traceback.print_exc()
+                            self.log(message='Could not remove repeating whitespace characters after "ConvertRepeatingSpaces" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
+
+                if 'stripLeadingTrailingSpaces' in self.spec:
+                    if self.spec['stripLeadingTrailingSpaces'] is True:
+                        try:
+                            if result_stdout is not None:
+                                result_stdout = result_stdout.strip()
+                            if result_stderr is not None:
+                                result_stderr = result_stderr.strip()
+                        except:
+                            traceback.print_exc()
+                            self.log(message='Could not remove repeating whitespace characters after "ConvertRepeatingSpaces" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
+
+                self.log(message='      Storing Exit Code', build_log_message_header=False, level='info', header=log_header)
+                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:EXIT_CODE'.format(task.kind, task.task_id, command, context), value=result_exit_code)
+
+                self.log(message='      Storing STDERR', build_log_message_header=False, level='info', header=log_header)
+                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDERR'.format(task.kind, task.task_id, command, context), value=result_stderr)
+
+                self.log(message='      Storing STDOUT', build_log_message_header=False, level='info', header=log_header)
+                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDOUT'.format(task.kind, task.task_id, command, context), value=result_stdout)
+
+                self.log(message='      Storing ALL DONE', build_log_message_header=False, level='info', header=log_header)
+
 
         except:
             task_processing_exception_formatted_stacktrace = traceback.format_exc()
