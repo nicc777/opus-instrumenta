@@ -124,6 +124,19 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
                     'value': 'echo "Hello World!"'
                 }
             },
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "test_echo_hello_world_01"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
             logger=self.logger
         )
         tasks = Tasks(logger=self.logger)

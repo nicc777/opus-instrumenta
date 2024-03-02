@@ -103,7 +103,7 @@ class ShellScript(TaskProcessor):
 
     def _create_work_file(self, source:str, log_header: str='', task_id: str='not-set')->str:
         work_file = '{}{}{}'.format(
-            self._get_work_dir(),
+            self._get_work_dir(log_header=log_header),
             os.sep,
             task_id
         )
@@ -173,12 +173,14 @@ class ShellScript(TaskProcessor):
         Raises:
             Exception: As determined by the processing logic.
         """
+        
         result_stdout = ''
         result_stderr = ''
         result_exit_code = 0
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
+        self.log(message='PROCESSING START', build_log_message_header=False, level='info', header=log_header)
         if '{}:{}:{}:processing:result:EXIT_CODE' in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
@@ -187,7 +189,6 @@ class ShellScript(TaskProcessor):
         task_processing_exception_formatted_stacktrace = ''
         try:
             self.spec = copy.deepcopy(task.spec)
-            self.log(message='process_task() CALLED', build_log_message_header=False, level='info', header=log_header)
             self.log(message='spec={}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
 
             ###
@@ -210,7 +211,7 @@ class ShellScript(TaskProcessor):
             else:
                 script_source = self._load_source_from_file()
             self.log(message='script_source:\n--------------------\n{}\n--------------------'.format(script_source), build_log_message_header=False, level='debug', header=log_header)
-            work_file = self._create_work_file(source=script_source, task_id=task.task_id)
+            work_file = self._create_work_file(source=script_source, task_id=task.task_id, log_header=log_header)
 
             ###
             ### EXECUTE
@@ -272,18 +273,6 @@ class ShellScript(TaskProcessor):
                             traceback.print_exc()
                             self.log(message='Could not remove repeating whitespace characters after "ConvertRepeatingSpaces" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
 
-                self.log(message='      Storing Exit Code', build_log_message_header=False, level='info', header=log_header)
-                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:EXIT_CODE'.format(task.kind, task.task_id, command, context), value=result_exit_code)
-
-                self.log(message='      Storing STDERR', build_log_message_header=False, level='info', header=log_header)
-                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDERR'.format(task.kind, task.task_id, command, context), value=result_stderr)
-
-                self.log(message='      Storing STDOUT', build_log_message_header=False, level='info', header=log_header)
-                new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDOUT'.format(task.kind, task.task_id, command, context), value=result_stdout)
-
-                self.log(message='      Storing ALL DONE', build_log_message_header=False, level='info', header=log_header)
-
-
         except:
             task_processing_exception_formatted_stacktrace = traceback.format_exc()
             self.log(message='EXCEPTION: {}'.format(task_processing_exception_formatted_stacktrace), build_log_message_header=False, level='error', header=log_header)
@@ -303,8 +292,16 @@ class ShellScript(TaskProcessor):
                 )
 
         self.spec = dict()
-        new_key_value_store.save(key='{}:{}:{}:processing:result:STDOUT'.format(task.task_id, command, context), value=result_stdout)
-        new_key_value_store.save(key='{}:{}:{}:processing:result:STDERR'.format(task.task_id, command, context), value=result_stderr)
-        new_key_value_store.save(key='{}:{}:{}:processing:result:EXIT_CODE'.format(task.task_id, command, context), value=result_exit_code)
+        
+        self.log(message='      Storing Exit Code', build_log_message_header=False, level='info', header=log_header)
+        new_key_value_store.save(key='{}:{}:{}:{}:processing:result:EXIT_CODE'.format(task.kind, task.task_id, command, context), value=result_exit_code)
+
+        self.log(message='      Storing STDERR', build_log_message_header=False, level='info', header=log_header)
+        new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDERR'.format(task.kind, task.task_id, command, context), value=result_stderr)
+
+        self.log(message='      Storing STDOUT', build_log_message_header=False, level='info', header=log_header)
+        new_key_value_store.save(key='{}:{}:{}:{}:processing:result:STDOUT'.format(task.kind, task.task_id, command, context), value=result_stdout)
+
+        self.log(message='DONE', build_log_message_header=False, level='info', header=log_header)
         return new_key_value_store
 
