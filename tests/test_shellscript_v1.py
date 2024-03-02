@@ -145,6 +145,14 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         tasks.process_context(command='apply', context='unittest')
         tasks.state_persistence.persist_all_state()
         dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
+        self.assertIsNotNone(tasks.key_value_store)
+        self.assertIsNotNone(tasks.key_value_store.store)
+        self.assertIsInstance(tasks.key_value_store, KeyValueStore)
+        self.assertIsInstance(tasks.key_value_store.store, dict)
+        self.assertTrue('PROCESSING_TASK:test_echo_hello_world_01:apply:unittest' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:EXIT_CODE' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDERR' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDOUT' in tasks.key_value_store.store)
         
 
 if __name__ == '__main__':
