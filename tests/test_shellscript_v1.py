@@ -1,6 +1,7 @@
 import sys
 import os
 import copy
+from inspect import stack
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
 print('sys.path={}'.format(sys.path))
@@ -8,7 +9,7 @@ print('sys.path={}'.format(sys.path))
 import unittest
 
 from task_processors.shell_script_v1 import ShellScript
-from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts
+from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore
 
 running_path = os.getcwd()
 print('Current Working Path: {}'.format(running_path))
@@ -74,6 +75,31 @@ def print_logger_lines(logger:LoggerWrapper):
         print(line)
 
 
+def dump_key_value_store(test_class_name: str, test_method_name: str, key_value_store: KeyValueStore):
+    try:
+        print('\n\n-------------------------------------------------------------------------------')
+        print('\t\tTest Class  : {}'.format(test_class_name))
+        print('\t\tTest Method : {}'.format(test_method_name))
+        print('\n-------------------------------------------------------------------------------')
+
+        # First get the max key length:
+        max_key_len = 0
+        for key,val in key_value_store.store.items():
+            if len(key) > max_key_len:
+                max_key_len = len(key)
+
+        for key,val in key_value_store.store.items():
+            final_key = '{}'.format(key)
+            spaces_qty = max_key_len - len(final_key) + 1
+            spaces = ' '*spaces_qty
+            final_key = '{}{}: '.format(final_key, spaces)
+            print('{}{}\n'.format(final_key, val))
+
+        print('\n_______________________________________________________________________________')
+    except:
+        pass
+
+
 class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
 
     def setUp(self) -> None:
@@ -90,8 +116,8 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
     def test_echo_hello_world_01(self):
         shell_script = ShellScript(logger=self.logger)
         task = Task(
-            kind='',
-            version='',
+            kind='ShellScript',
+            version='v1',
             spec={
                 'source': {
                     'type': 'inline',
@@ -102,8 +128,9 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         )
         tasks = Tasks(logger=self.logger)
         tasks.register_task_processor(processor=shell_script)
-        tasks.add_task(task.task)
+        tasks.add_task(task=task)
         tasks.process_context(command='apply', context='unittest')
+        dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
         
 
 if __name__ == '__main__':

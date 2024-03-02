@@ -101,11 +101,11 @@ class ShellScript(TaskProcessor):
         except:
             pass
 
-    def _create_work_file(self, source:str, log_header: str='')->str:
+    def _create_work_file(self, source:str, log_header: str='', task_id: str='not-set')->str:
         work_file = '{}{}{}'.format(
             self._get_work_dir(),
             os.sep,
-            self.metadata['name']
+            task_id
         )
         self.log(message='   Writing source code to file "{}"'.format(work_file), level='info', build_log_message_header=False , header=log_header)
         self._del_file(file=work_file)
@@ -210,7 +210,7 @@ class ShellScript(TaskProcessor):
             else:
                 script_source = self._load_source_from_file()
             self.log(message='script_source:\n--------------------\n{}\n--------------------'.format(script_source), build_log_message_header=False, level='debug', header=log_header)
-            work_file = self._create_work_file(source=script_source)
+            work_file = self._create_work_file(source=script_source, task_id=task.task_id)
 
             ###
             ### EXECUTE
