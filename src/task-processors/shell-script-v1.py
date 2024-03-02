@@ -1,4 +1,10 @@
 import copy
+import traceback
+from pathlib import Path
+import subprocess
+import tempfile
+import chardet
+import os
 from opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
 
 
@@ -52,6 +58,71 @@ class ShellScript(TaskProcessor):
     def __init__(self, kind: str='ShellScript', kind_versions: list=['v1',], supported_commands: list = list(), logger: LoggerWrapper = LoggerWrapper()):
         super().__init__(kind, kind_versions, supported_commands, logger)
 
+    def _id_source(self, log_header: str='')->str:
+        source = 'inline'
+        if 'source' in self.spec:
+            if 'type' in self.spec['source']:
+                if self.spec['source']['type'] in ('inLine', 'filePath',):
+                    source = self.spec['source']['type']
+        return source
+
+    def _load_source_from_spec(self, log_header: str='')->str:
+        source = 'exit 0'
+        if 'source' in self.spec:
+            if 'value' in self.spec['source']:
+                source = self.spec['source']['value']
+        return source
+
+    def _load_source_from_file(self, log_header: str='')->str:
+        source = 'exit 0'
+        if 'source' in self.spec:
+            if 'value' in self.spec['source']:
+                try:
+                    self.log(message='   Loading script source from file "{}"'.format(self.spec['source']['value']), level='info', build_log_message_header=False , header=log_header)
+                    with open(self.spec['source']['value'], 'r') as f:
+                        source = f.read()
+                except:
+                    self.log(message='   EXCEPTION: {}'.format(traceback.format_exc()), level='error', build_log_message_header=False , header=log_header)
+        return source
+
+    def _get_work_dir(self, log_header: str='')->str:
+        work_dir = tempfile.gettempdir()
+        if 'workDir' in self.spec:
+            if 'path' in self.spec['workDir']:
+                work_dir = self.spec['workDir']['path']
+        self.log(message='   Work directory set to "{}"'.format(work_dir), level='info', build_log_message_header=False , header=log_header)
+        return work_dir
+
+    def _del_file(self, file: str, log_header: str=''):
+        try:
+            os.unlink(file)
+        except:
+            pass
+
+    def _create_work_file(self, source:str, log_header: str='')->str:
+        work_file = '{}{}{}'.format(
+            self._get_work_dir(),
+            os.sep,
+            self.metadata['name']
+        )
+        self.log(message='   Writing source code to file "{}"'.format(work_file), level='info', build_log_message_header=False , header=log_header)
+        self._del_file(file=work_file)
+        try:
+            with open(work_file, 'w') as f:
+                f.write(source)
+            self.log(message='      DONE', level='info', build_log_message_header=False , header=log_header)
+        except:
+            self.log(message='   EXCEPTION in _create_work_file(): {}'.format(traceback.format_exc()), level='error', build_log_message_header=False , header=log_header)
+        return work_file
+
+    def __detect_encoding(self, input_str: str)->str:
+        encoding = None
+        try:
+            encoding = chardet.detect(input_str)['encoding']
+        except:
+            pass
+        return encoding
+
     def process_task(self, task: Task, command: str, context: str='default', key_value_store: KeyValueStore=KeyValueStore(), state_persistence: StatePersistence=StatePersistence())->KeyValueStore:
         """Regardless of command and context, the specified shell script will be run, unless specifically excluded.
 
@@ -104,8 +175,9 @@ class ShellScript(TaskProcessor):
         result_exit_code = 0
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
+        log_header = self.format_log_header(task=task, command=command, context=context)
         if '{}:{}:{}:processing:result:EXIT_CODE' in key_value_store.store is True:
-            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', task=task, command=command, context=context, level='warning')
+            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False , level='warning', header=log_header)
             return new_key_value_store
         
 

@@ -27,7 +27,7 @@ python3 -m venv venv
 
 . venv/bin/activate
 
-pip3 install coverage build twine 
+pip3 install -r requirements.txt
 ```
 
 Also install the latest version of [opus](https://github.com/nicc777). For now, assuming you have cloned and build `opus` locally, install the `opus` library from the package in the `dist/` directory from the project directory. An example:

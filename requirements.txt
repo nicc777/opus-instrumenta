@@ -1,0 +1,7 @@
+boto3
+chardet
+GitPython
+requests
+coverage
+build
+twine 
