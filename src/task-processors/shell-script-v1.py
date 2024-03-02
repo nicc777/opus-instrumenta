@@ -105,7 +105,7 @@ class ShellScript(TaskProcessor):
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         if '{}:{}:{}:processing:result:EXIT_CODE' in key_value_store.store is True:
-            self.logger.warning(message='The task "{}" have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.'.format(task.task_id))
+            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', task=task, command=command, context=context, level='warning')
             return new_key_value_store
         
 
