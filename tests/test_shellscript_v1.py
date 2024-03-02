@@ -130,6 +130,7 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         tasks.register_task_processor(processor=shell_script)
         tasks.add_task(task=task)
         tasks.process_context(command='apply', context='unittest')
+        tasks.state_persistence.persist_all_state()
         dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
         
 
