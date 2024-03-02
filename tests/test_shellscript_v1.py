@@ -118,12 +118,6 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         task = Task(
             kind='ShellScript',
             version='v1',
-            spec={
-                'source': {
-                    'type': 'inline',
-                    'value': 'echo "Hello World!"'
-                }
-            },
             metadata={
                 "identifiers": [
                     {
@@ -136,6 +130,12 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
                         "value": "TRUE"
                     }
                 ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "Hello World!"'
+                }
             },
             logger=self.logger
         )
