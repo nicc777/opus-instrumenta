@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import chardet
 import os
+import json
 from opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
 
 
@@ -56,6 +57,7 @@ class ShellScript(TaskProcessor):
     """
 
     def __init__(self, kind: str='ShellScript', kind_versions: list=['v1',], supported_commands: list = list(), logger: LoggerWrapper = LoggerWrapper()):
+        self.spec = dict()
         super().__init__(kind, kind_versions, supported_commands, logger)
 
     def _id_source(self, log_header: str='')->str:
@@ -177,11 +179,60 @@ class ShellScript(TaskProcessor):
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
         if '{}:{}:{}:processing:result:EXIT_CODE' in key_value_store.store is True:
-            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False , level='warning', header=log_header)
+            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
         
+        task_processing_exception_raised = False
+        task_processing_exception_formatted_stacktrace = ''
+        try:
+            self.spec = copy.deepcopy(task.spec)
+            self.log(message='process_task() CALLED', build_log_message_header=False, level='info', header=log_header)
+            self.log(message='spec={}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
 
+            ###
+            ### PREP SOURCE FILE
+            ###
+            script_source = 'exit 0'
+            if self._id_source() == 'inline':
+                shabang = '#!/bin/sh'
+                if 'shellInterpreter' in self.spec:
+                    shabang = self.spec['shellInterpreter']
+                    script_source = '#!/usr/bin/env {}\n\n{}'.format(
+                        shabang,
+                        self._load_source_from_spec()
+                    )
+                else:
+                    script_source = '{}\n\n{}'.format(
+                        shabang,
+                        self._load_source_from_spec()
+                    )
+            else:
+                script_source = self._load_source_from_file()
+            self.log(message='script_source:\n--------------------\n{}\n--------------------'.format(script_source), build_log_message_header=False, level='debug', header=log_header)
+            work_file = self._create_work_file(source=script_source)
+
+        except:
+            task_processing_exception_formatted_stacktrace = traceback.format_exc()
+            self.log(message='EXCEPTION: {}'.format(task_processing_exception_formatted_stacktrace), build_log_message_header=False, level='error', header=log_header)
+            task_processing_exception_raised = True
+
+        if task_processing_exception_raised is True or result_exit_code != 0:
+            if 'raiseExceptionOnError' in task.spec:
+                if isinstance(task.spec['raiseExceptionOnError'], bool):
+                    if task.spec['raiseExceptionOnError'] is True:
+                        raise Exception('{} - Task Processing failed Stacktrace was logged.'.format(log_header))
+            if len(task_processing_exception_formatted_stacktrace) > 0:
+                nl = ''
+                if len(result_stderr) == 0:
+                    nl = '\n'
+                result_stderr = '{}\nProcessing Exception Stacktrace:\n-------------------------------\n{}\n-------------------------------'.format(
+                    result_stderr,
+                    task_processing_exception_formatted_stacktrace
+                )
+
+        self.spec = dict()
         new_key_value_store.save(key='{}:{}:{}:processing:result:STDOUT'.format(task.task_id, command, context), value=result_stdout)
         new_key_value_store.save(key='{}:{}:{}:processing:result:STDERR'.format(task.task_id, command, context), value=result_stderr)
         new_key_value_store.save(key='{}:{}:{}:processing:result:EXIT_CODE'.format(task.task_id, command, context), value=result_exit_code)
         return new_key_value_store
+
