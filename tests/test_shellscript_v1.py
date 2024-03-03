@@ -194,11 +194,20 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.assertIsNotNone(tasks.key_value_store.store)
         self.assertIsInstance(tasks.key_value_store, KeyValueStore)
         self.assertIsInstance(tasks.key_value_store.store, dict)
-        self.assertTrue('PROCESSING_TASK:test_echo_hello_world_01:apply:unittest' in tasks.key_value_store.store)
-        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:EXIT_CODE' in tasks.key_value_store.store)
-        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDERR' in tasks.key_value_store.store)
-        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDOUT' in tasks.key_value_store.store)
-        
+
+        expected_key_values = {
+            'PROCESSING_TASK:test_echo_hello_world_01:apply:unittest': 2,
+            'ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:EXIT_CODE': 0,
+            'ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDERR': '',
+            'ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDOUT': 'Hello World!',
+        }
+
+        for expected_key_value_key, expected_value in expected_key_values.items():
+            expected_value_type = type(expected_value)
+            self.assertTrue(expected_key_value_key in tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store.store[expected_key_value_key], expected_value_type)
+            self.assertEqual(tasks.key_value_store.store[expected_key_value_key], expected_value)
+
 
 if __name__ == '__main__':
     unittest.main()
