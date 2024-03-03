@@ -58,6 +58,7 @@ class ShellScript(TaskProcessor):
 
     def __init__(self, kind: str='ShellScript', kind_versions: list=['v1',], supported_commands: list = list(), logger: LoggerWrapper = LoggerWrapper()):
         self.spec = dict()
+        self.metadata = dict()
         super().__init__(kind, kind_versions, supported_commands, logger)
 
     def _id_source(self, log_header: str='')->str:
@@ -188,7 +189,8 @@ class ShellScript(TaskProcessor):
         task_processing_exception_raised = False
         task_processing_exception_formatted_stacktrace = ''
         try:
-            self.spec = copy.deepcopy(task.spec)
+            self.spec = copy.deepcopy(task.original_data['spec'])
+            self.metadata = copy.deepcopy(task.original_data['metadata'])
             self.log(message='spec={}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
 
             ###
@@ -283,6 +285,9 @@ class ShellScript(TaskProcessor):
             self.log(message='EXCEPTION: {}'.format(task_processing_exception_formatted_stacktrace), build_log_message_header=False, level='error', header=log_header)
             task_processing_exception_raised = True
 
+        self.spec = dict()
+        self.metadata = dict()
+
         if task_processing_exception_raised is True or result_exit_code != 0:
             if 'raiseExceptionOnError' in task.spec:
                 if isinstance(task.spec['raiseExceptionOnError'], bool):
@@ -295,8 +300,6 @@ class ShellScript(TaskProcessor):
                     result_stderr,
                     task_processing_exception_formatted_stacktrace
                 )
-
-        self.spec = dict()
         
         self.log(message='      Storing Exit Code', build_log_message_header=False, level='info', header=log_header)
         new_key_value_store.save(key='{}:{}:{}:{}:processing:result:EXIT_CODE'.format(task.kind, task.task_id, command, context), value=result_exit_code)
