@@ -153,6 +153,51 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:EXIT_CODE' in tasks.key_value_store.store)
         self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDERR' in tasks.key_value_store.store)
         self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDOUT' in tasks.key_value_store.store)
+
+    def test_echo_hello_world_02(self):
+        shell_script = ShellScript(logger=self.logger)
+        task = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "test_echo_hello_world_01"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "    Hello    World!  \n"'
+                },
+                'convertOutputToText': True,
+                'stripNewline': True,
+                'convertRepeatingSpaces': True,
+                'stripLeadingTrailingSpaces': True
+            },
+            logger=self.logger
+        )
+        tasks = Tasks(logger=self.logger)
+        tasks.register_task_processor(processor=shell_script)
+        tasks.add_task(task=task)
+        tasks.process_context(command='apply', context='unittest')
+        tasks.state_persistence.persist_all_state()
+        dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
+        self.assertIsNotNone(tasks.key_value_store)
+        self.assertIsNotNone(tasks.key_value_store.store)
+        self.assertIsInstance(tasks.key_value_store, KeyValueStore)
+        self.assertIsInstance(tasks.key_value_store.store, dict)
+        self.assertTrue('PROCESSING_TASK:test_echo_hello_world_01:apply:unittest' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:EXIT_CODE' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDERR' in tasks.key_value_store.store)
+        self.assertTrue('ShellScript:test_echo_hello_world_01:apply:unittest:processing:result:STDOUT' in tasks.key_value_store.store)
         
 
 if __name__ == '__main__':
