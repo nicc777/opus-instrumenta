@@ -231,7 +231,9 @@ class ShellScript(TaskProcessor):
                 value_stderr_encoding = self.__detect_encoding(input_str=result.stdout)
                 result_stderr = result.stderr
 
+                # FIXME - all keys are at the moment lower case - use original SPEC...
                 if 'convertOutputToText' in self.spec:
+                    self.log(message='      Processing "convertOutputToText"', build_log_message_header=False, level='debug', header=log_header)   
                     if self.spec['convertOutputToText'] is True:
                         if value_stdout_encoding is not None:
                             result_stdout = result_stdout.decode(value_stdout_encoding)
@@ -239,6 +241,7 @@ class ShellScript(TaskProcessor):
                             result_stderr = result_stderr.decode(value_stderr_encoding)
 
                 if 'stripNewline' in self.spec:
+                    self.log(message='      Processing "stripNewline"', build_log_message_header=False, level='debug', header=log_header)   
                     if self.spec['stripNewline'] is True:
                         try:
                             if result_stdout is not None:
@@ -252,6 +255,7 @@ class ShellScript(TaskProcessor):
                             self.log(message='Could not remove newline characters after "StripNewline" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
 
                 if 'convertRepeatingSpaces' in self.spec:
+                    self.log(message='      Processing "convertRepeatingSpaces"', build_log_message_header=False, level='debug', header=log_header)
                     if self.spec['convertRepeatingSpaces'] is True:
                         try:
                             if result_stdout is not None:
@@ -263,6 +267,7 @@ class ShellScript(TaskProcessor):
                             self.log(message='Could not remove repeating whitespace characters after "ConvertRepeatingSpaces" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
 
                 if 'stripLeadingTrailingSpaces' in self.spec:
+                    self.log(message='      Processing "stripLeadingTrailingSpaces"', build_log_message_header=False, level='debug', header=log_header)
                     if self.spec['stripLeadingTrailingSpaces'] is True:
                         try:
                             if result_stdout is not None:
