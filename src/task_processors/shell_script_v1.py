@@ -127,7 +127,10 @@ class ShellScript(TaskProcessor):
         return encoding
 
     def process_task(self, task: Task, command: str, context: str='default', key_value_store: KeyValueStore=KeyValueStore(), state_persistence: StatePersistence=StatePersistence())->KeyValueStore:
-        """Regardless of command and context, the specified shell script will be run, unless specifically excluded.
+        """This `Task` runs a shell command and saves the shell exitcode, STDOUT and STDERR values to the 
+        `KeyValueStore`
+        
+        Regardless of command and context, the specified shell script will be run, unless specifically excluded.
 
         # Spec fields
 
@@ -182,7 +185,7 @@ class ShellScript(TaskProcessor):
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START', build_log_message_header=False, level='info', header=log_header)
-        if '{}:{}:{}:processing:result:EXIT_CODE' in key_value_store.store is True:
+        if '{}:{}:{}:{}:processing:result:EXIT_CODE'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
         

@@ -2,7 +2,9 @@
     "cSpell.words": [
         "chardet",
         "operarius",
-        "shabang"
+        "shabang",
+        "SIGALRM",
+        "signum"
     ],
     "python.testing.unittestArgs": [
         "-v",
