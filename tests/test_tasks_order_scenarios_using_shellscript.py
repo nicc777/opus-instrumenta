@@ -286,6 +286,175 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
             self.assertTrue(validate_order(must_be_before_input_task_name='t_1', input_task_name='t_4', list_of_tasks=calculated_task_order), 'Set #{} - Expected t_1 to be before t_4: added_task_order={}   calculated_task_order={}'.format(set_nr, added_task_order, calculated_task_order))
             self.assertTrue(validate_order(must_be_before_input_task_name='t_2', input_task_name='t_4', list_of_tasks=calculated_task_order), 'Set #{} - Expected t_2 to be before t_4: added_task_order={}   calculated_task_order={}'.format(set_nr, added_task_order, calculated_task_order))
 
+    def test_dependant_tasks_processing_with_verified_results_01(self):
+        shell_script = ShellScript(logger=self.logger)
+        t_1 = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "t_1"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "t_2" },
+                            { "key": "t_3" },
+                        ]
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "r_1"'
+                },
+                'convertOutputToText': True,
+                'stripNewline': True,
+                'convertRepeatingSpaces': True,
+                'stripLeadingTrailingSpaces': True
+            },
+            logger=self.logger
+        )
+        t_2 = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "t_2"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "t_3" },
+                        ]
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "r_2"'
+                },
+                'convertOutputToText': True,
+                'stripNewline': True,
+                'convertRepeatingSpaces': True,
+                'stripLeadingTrailingSpaces': True
+            },
+            logger=self.logger
+        )
+        t_3 = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "t_3"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "r_3"'
+                },
+                'convertOutputToText': True,
+                'stripNewline': True,
+                'convertRepeatingSpaces': True,
+                'stripLeadingTrailingSpaces': True
+            },
+            logger=self.logger
+        )
+        t_4 = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "t_4"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "t_1" },
+                            { "key": "t_2" },
+                        ]
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'echo "r_4"'
+                },
+                'convertOutputToText': True,
+                'stripNewline': True,
+                'convertRepeatingSpaces': True,
+                'stripLeadingTrailingSpaces': True
+            },
+            logger=self.logger
+        )
+
+        tasks_to_process = [t_1,t_2,t_3,t_4]
+        tasks = Tasks(logger=self.logger)
+        tasks.register_task_processor(processor=shell_script)
+        task: Task
+        for task in tasks_to_process:
+            print('   Adding task "{}"'.format(task.task_id))
+            tasks.add_task(task=task)
+        tasks.process_context(command='apply', context='unittest')
+        dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
+        for task_id in ('t_1','t_2','t_3','t_4',):
+
+            self.assertTrue('PROCESSING_TASK:{}:apply:unittest'.format(task_id) in tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store.store['PROCESSING_TASK:{}:apply:unittest'.format(task_id)], int)
+            self.assertEqual(tasks.key_value_store.store['PROCESSING_TASK:{}:apply:unittest'.format(task_id)], 2)
+
+            self.assertTrue('ShellScript:{}:apply:unittest:processing:result:EXIT_CODE'.format(task_id) in tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:EXIT_CODE'.format(task_id)], int)
+            self.assertEqual(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:EXIT_CODE'.format(task_id)], 0)
+
+            self.assertTrue('ShellScript:{}:apply:unittest:processing:result:STDERR'.format(task_id) in tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:STDERR'.format(task_id)], str)
+            self.assertEqual(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:STDERR'.format(task_id)], '')
+
+            result = task_id.replace('t', 'r')
+            self.assertTrue('ShellScript:{}:apply:unittest:processing:result:STDOUT'.format(task_id) in tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:STDOUT'.format(task_id)], str)
+            self.assertEqual(tasks.key_value_store.store['ShellScript:{}:apply:unittest:processing:result:STDOUT'.format(task_id)], result)
+
 
 if __name__ == '__main__':
     unittest.main()
