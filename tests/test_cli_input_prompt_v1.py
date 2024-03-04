@@ -150,6 +150,8 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.assertIsInstance(tasks.key_value_store, KeyValueStore)
         self.assertIsInstance(tasks.key_value_store.store, dict)
         self.assertTrue('PROCESSING_TASK:test1:apply:unittest' in tasks.key_value_store.store)
+        self.assertTrue('CliInputPrompt:test1:apply:unittest:RESULT' in tasks.key_value_store.store)
+        self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:apply:unittest:RESULT'], 'it worked!')
 
 
 if __name__ == '__main__':

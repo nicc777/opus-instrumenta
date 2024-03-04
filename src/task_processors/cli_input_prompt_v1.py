@@ -134,6 +134,7 @@ class CliInputPrompt(TaskProcessor):
         if prompt_text is not None:
             print('{}\n'.format(prompt_text))
 
+        value = None
         if wait_timeout_seconds > 0:
             if mask_input is True:
                 value = get_password_input_with_timeout(prompt_char=prompt_char, timeout_seconds=wait_timeout_seconds, default_value=default_value)
@@ -144,6 +145,8 @@ class CliInputPrompt(TaskProcessor):
                 value = getpass(prompt=prompt_char)
             else:
                 value = input(prompt_char)
+        self.log(message='  Storing value', build_log_message_header=False, level='info', header=log_header)
+        new_key_value_store.save(key='{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context), value=value)
 
         self.log(message='value={}'.format(value), build_log_message_header=False, level='debug', header=log_header)
         if value == '' and convert_empty_input_to_none_value is True:
