@@ -253,39 +253,41 @@ class WebDownloadFile(TaskProcessor):
 
         if 'proxy' in self.spec:
             if self.spec['proxy'] is not None:
-                if 'host' in self.spec['proxy']:
-                    if self.spec['proxy']['host'] is not None:
-                        if isinstance(self.spec['proxy']['host'], str):
-                            use_proxy = True
-                            proxy_host = self.spec['proxy']['host']
-                            if 'basicAuthentication' in self.spec['proxy']:
-                                if self.spec['proxy']['basicAuthentication'] is not None:
-                                    if isinstance(self.spec['proxy']['basicAuthentication'], dict):
-                                        use_proxy_authentication = True
-                                        if 'username' in ['proxy']['basicAuthentication']:
-                                            if self.spec['proxy']['basicAuthentication']['username'] is not None:
-                                                if isinstance(self.spec['proxy']['basicAuthentication']['username'], str):
-                                                    proxy_username = self.spec['proxy']['basicAuthentication']['username']
-                                        if 'password' in ['proxy']['basicAuthentication']:
-                                            if self.spec['proxy']['basicAuthentication']['password'] is not None:
-                                                if isinstance(self.spec['proxy']['basicAuthentication']['password'], str):
-                                                    proxy_password = self.spec['proxy']['basicAuthentication']['password']
-                                        if proxy_password is None:
-                                            use_proxy_authentication = False
+                if isinstance(self.spec['proxy'], dict) is True:
+                    if 'host' in self.spec['proxy']:
+                        if self.spec['proxy']['host'] is not None:
+                            if isinstance(self.spec['proxy']['host'], str) is True:
+                                use_proxy = True
+                                proxy_host = self.spec['proxy']['host']
+                                if 'basicAuthentication' in self.spec['proxy']:
+                                    if self.spec['proxy']['basicAuthentication'] is not None:
+                                        if isinstance(self.spec['proxy']['basicAuthentication'], dict) is True:
+                                            use_proxy_authentication = True
+                                            if 'username' in ['proxy']['basicAuthentication']:
+                                                if self.spec['proxy']['basicAuthentication']['username'] is not None:
+                                                    if isinstance(self.spec['proxy']['basicAuthentication']['username'], str) is True:
+                                                        proxy_username = self.spec['proxy']['basicAuthentication']['username']
+                                            if 'password' in ['proxy']['basicAuthentication']:
+                                                if self.spec['proxy']['basicAuthentication']['password'] is not None:
+                                                    if isinstance(self.spec['proxy']['basicAuthentication']['password'], str) is True:
+                                                        proxy_password = self.spec['proxy']['basicAuthentication']['password']
+                                            if proxy_password is None:
+                                                use_proxy_authentication = False
 
         if 'httpBasicAuthentication' in self.spec:
-            use_http_basic_authentication = True
-            http_basic_authentication_username = self.spec['httpBasicAuthentication']['username']
-            http_basic_authentication_password = variable_cache.get_value(
-                variable_name=self.spec['httpBasicAuthentication']['passwordVariableName'],
-                value_if_expired=None,
-                default_value_if_not_found=None,
-                raise_exception_on_expired=False,
-                raise_exception_on_not_found=False
-            ).strip()
-            if http_basic_authentication_password is None:
-                self.log(message='      Basic Authentication Password not Set - Ignoring HTTP Basic Authentication Configuration', level='warning')
-                use_http_basic_authentication = False
+            if self.spec['httpBasicAuthentication'] is not None:
+                if isinstance(self.spec['httpBasicAuthentication'], dict) is True:
+                    use_http_basic_authentication = True
+                    if 'username' in self.spec['httpBasicAuthentication']:
+                        if self.spec['httpBasicAuthentication']['username'] is not None:
+                            if isinstance(self.spec['httpBasicAuthentication']['username'], dict) is True:
+                                http_basic_authentication_username = self.spec['httpBasicAuthentication']['username']
+                    if 'password' in self.spec['httpBasicAuthentication']:
+                        if self.spec['httpBasicAuthentication']['password'] is not None:
+                            if isinstance(self.spec['httpBasicAuthentication']['password'], dict) is True:
+                                http_basic_authentication_password =  self.spec['httpBasicAuthentication']['password']
+                    if http_basic_authentication_password is None or http_basic_authentication_username is None:
+                        use_http_basic_authentication = False
 
         if 'extraHeaders' in self.spec:
             extra_headers = dict()
