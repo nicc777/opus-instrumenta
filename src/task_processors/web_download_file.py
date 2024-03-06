@@ -252,22 +252,26 @@ class WebDownloadFile(TaskProcessor):
                 self.log(message='Found `skipSslVerification` but value is None type - ignoring', build_log_message_header=False, level='warning', header=log_header)
 
         if 'proxy' in self.spec:
-            if 'host' in self.spec['proxy']:
-                use_proxy = True
-                proxy_host = self.spec['proxy']['host']
-                if 'basicAuthentication' in self.spec['proxy']:
-                    use_proxy_authentication = True
-                    proxy_username = self.spec['proxy']['basicAuthentication']['username']
-                    proxy_password = variable_cache.get_value(
-                        variable_name=self.spec['proxy']['basicAuthentication']['passwordVariableName'],
-                        value_if_expired=None,
-                        default_value_if_not_found=None,
-                        raise_exception_on_expired=False,
-                        raise_exception_on_not_found=False
-                    ).strip()
-                    if proxy_password is None:
-                        self.log(message='      Proxy Password not Set - Ignoring Proxy AuthenticationConfiguration', level='warning')
-                        use_proxy_authentication = False
+            if self.spec['proxy'] is not None:
+                if 'host' in self.spec['proxy']:
+                    if self.spec['proxy']['host'] is not None:
+                        if isinstance(self.spec['proxy']['host'], str):
+                            use_proxy = True
+                            proxy_host = self.spec['proxy']['host']
+                            if 'basicAuthentication' in self.spec['proxy']:
+                                if self.spec['proxy']['basicAuthentication'] is not None:
+                                    if isinstance(self.spec['proxy']['basicAuthentication'], dict):
+                                        use_proxy_authentication = True
+                                        if 'username' in ['proxy']['basicAuthentication']:
+                                            if self.spec['proxy']['basicAuthentication']['username'] is not None:
+                                                if isinstance(self.spec['proxy']['basicAuthentication']['username'], str):
+                                                    proxy_username = self.spec['proxy']['basicAuthentication']['username']
+                                        if 'password' in ['proxy']['basicAuthentication']:
+                                            if self.spec['proxy']['basicAuthentication']['password'] is not None:
+                                                if isinstance(self.spec['proxy']['basicAuthentication']['password'], str):
+                                                    proxy_password = self.spec['proxy']['basicAuthentication']['password']
+                                        if proxy_password is None:
+                                            use_proxy_authentication = False
 
         if 'httpBasicAuthentication' in self.spec:
             use_http_basic_authentication = True
