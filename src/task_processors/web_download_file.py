@@ -218,7 +218,7 @@ class WebDownloadFile(TaskProcessor):
         if os.path.exists(self.spec['targetOutputFile']) is True:
             if Path(self.spec['targetOutputFile']).is_file() is True:
                 local_file_size = int(get_file_size(file_path=self.spec['targetOutputFile']))
-                self.log(message='local_file_size={}   remote_file_size={}'.format(local_file_size, remote_file_size), level='info')
+                self.log(message='local_file_size={}   remote_file_size={}'.format(local_file_size, remote_file_size), build_log_message_header=False, level='info', header=log_header)
                 if local_file_size == remote_file_size:
                     return self._store_values(key_value_store=copy.deepcopy(new_key_value_store), value='n/a', task_id=task.task_id, command=command, context=context, log_header=log_header)
             else:
@@ -243,7 +243,13 @@ class WebDownloadFile(TaskProcessor):
         if url.lower().startswith('https'):
             use_ssl = True
         if use_ssl is True and 'skipSslVerification' in self.spec:
-            verify_ssl = not self.spec['skipSslVerification']
+            if self.spec['skipSslVerification'] is not None:
+                if isinstance(self.spec['skipSslVerification'], bool):
+                    verify_ssl = not self.spec['skipSslVerification']
+                else:
+                    self.log(message='Found `skipSslVerification` but value is not a boolean type - ignoring', build_log_message_header=False, level='warning', header=log_header)
+            else:
+                self.log(message='Found `skipSslVerification` but value is None type - ignoring', build_log_message_header=False, level='warning', header=log_header)
 
         if 'proxy' in self.spec:
             if 'host' in self.spec['proxy']:
