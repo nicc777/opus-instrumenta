@@ -112,6 +112,14 @@ class WebDownloadFile(TaskProcessor):
             return False
         return True
 
+    def _store_values(self, key_value_store: KeyValueStore, value: object, task_id: str, command: str, context: str, log_header:str='')->KeyValueStore:
+        new_key_value_store = KeyValueStore()
+        new_key_value_store.store = copy.deepcopy(key_value_store.store)
+        final_key = '{}:{}:{}:{}:RESULT'.format(self.kind, task_id, command, context)
+        self.log(message='  Storing value in key "{}"'.format(final_key), build_log_message_header=False, level='info', header=log_header)
+        new_key_value_store.save(key=final_key, value=value)
+        return new_key_value_store
+
     def process_task(self, task: Task, command: str, context: str = 'default', key_value_store: KeyValueStore = KeyValueStore(), state_persistence: StatePersistence = StatePersistence()) -> KeyValueStore:
         """This task processor will download a file from a HTTP or HTTPS server.
 
@@ -211,12 +219,10 @@ class WebDownloadFile(TaskProcessor):
             if Path(self.spec['targetOutputFile']).is_file() is True:
                 local_file_size = int(get_file_size(file_path=self.spec['targetOutputFile']))
                 self.log(message='local_file_size={}   remote_file_size={}'.format(local_file_size, remote_file_size), level='info')
-                if local_file_size != remote_file_size:
-                    return True
+                if local_file_size == remote_file_size:
+                    return self._store_values(key_value_store=copy.deepcopy(new_key_value_store), value='n/a', task_id=task.task_id, command=command, context=context, log_header=log_header)
             else:
                 raise Exception('The target output file cannot be used as the named target exists but is not a file')
-        else:
-            return True
 
         use_ssl = False
         verify_ssl = True
