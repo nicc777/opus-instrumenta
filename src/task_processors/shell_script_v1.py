@@ -147,7 +147,7 @@ class ShellScript(TaskProcessor):
         | `stripLeadingTrailingSpaces` |  bool    |    No    |     v1      | Output may contain more than one repeating space or tab characters. Setting this value to true will replace these with a single space. Default=False                                                                                            |
         | `raiseExceptionOnError`      |  bool    |    No    |     v1      | Default value is `False`. If set to `True`, and shell processing exit code other that `0` will force an exception to be raised.                                                                                                                 |
 
-        ## Fields of `source`
+        ## Fields for `source`
 
         | Field                        | Type     | Required | In Versions | Description                                                                                                                                                                                                                                     |
         | ---------------------------- | :------: | :------: | :---------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
