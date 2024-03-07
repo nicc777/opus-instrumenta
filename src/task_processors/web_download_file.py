@@ -125,9 +125,8 @@ class WebDownloadFile(TaskProcessor):
         new_key_value_store.save(key=final_key, value=value)
         return new_key_value_store
 
-    def _delete_output_file(
+    def delete_output_file(
         self,
-        kind: str,
         task_id: str,
         command: str,
         context: str,
@@ -135,6 +134,23 @@ class WebDownloadFile(TaskProcessor):
         remove_target_output_file_stored_result_on_file_deletion: bool=True,
         log_header: str=''
     )->KeyValueStore:
+        """A helper function that the client can use to delete a previously downloaded artifact, or an artifact that is
+        defined in the `spec` that may exist on the filesystem.
+
+        Args:
+            task_id: The task ID
+            command: The command
+            context: The context
+            key_value_store: A copy of the current `KeyValueStore`. A new instance with updated values will be returned.
+            remove_target_output_file_stored_result_on_file_deletion: A boolean indicating if the `KeyValueStore` result must also be removed when the file is deleted. The default is `True`.
+            log_header: A string that is added as a leader string to all log messages. The string can be empty, but not `None`
+
+        Returns:
+            A new instance of `KeyValueStore`. 
+            
+            If the argument `remove_target_output_file_stored_result_on_file_deletion` was set to `True` and a previous
+            download was done with a stored result, the previous result data will be removed from the `KeyValueStore`.
+        """
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         try:
@@ -145,7 +161,7 @@ class WebDownloadFile(TaskProcessor):
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
         if remove_target_output_file_stored_result_on_file_deletion is True:
-            key = '{}:{}:{}:{}:RESULT'.format(kind,task_id,command,context)
+            key = 'WebDownloadFile:{}:{}:{}:RESULT'.format(task_id,command,context)
             if key in key_value_store.store is True:
                 new_key_value_store.store.pop(key)
         return new_key_value_store
