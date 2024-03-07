@@ -69,18 +69,20 @@ class WebDownloadFile(TaskProcessor):
         method: str,
         body: str,
         log_header:str=''
-    )->bool:
+    )->str:
         self.log(message='Running Method "_get_data_basic_request()"', build_log_message_header=False, level='debug', header=log_header)
+        http_status_code = None
         try:
             proxies=self._build_proxy_dict(proxy_host=proxy_host, proxy_username=proxy_username, proxy_password=proxy_password)
             auth = self._build_http_basic_auth_dict(username=username, password=password)
             r = requests.request(method=method, url=url, allow_redirects=True, verify=verify_ssl, proxies=proxies, auth=auth, headers=headers, data=body)
+            if r:
+                http_status_code = '{}'.format(r.status_code)
             with open(target_file, 'wb') as f:
                 f.write(r.content)
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
-            return False
-        return True
+        return http_status_code
 
     def _get_data_basic_request_stream(
         self,
@@ -99,18 +101,21 @@ class WebDownloadFile(TaskProcessor):
     )->bool:
         # Refer to https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests
         self.log(message='Running Method "_get_data_basic_request_stream()"', build_log_message_header=False, level='debug', header=log_header)
+        http_status_code = None
         try:
             proxies=self._build_proxy_dict(proxy_host=proxy_host, proxy_username=proxy_username, proxy_password=proxy_password)
             auth = self._build_http_basic_auth_dict(username=username, password=password)
             with requests.request(method=method, url=url, allow_redirects=True, verify=verify_ssl, proxies=proxies, auth=auth, headers=headers, stream=True, data=body) as r:
+                if r:
+                    http_status_code = '{}'.format(r.status_code)
                 r.raise_for_status()
                 with open(target_file, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
-            return False
-        return True
+            return None
+        return http_status_code
 
     def _store_values(self, key_value_store: KeyValueStore, value: object, task_id: str, command: str, context: str, log_header:str='')->KeyValueStore:
         new_key_value_store = KeyValueStore()
@@ -404,8 +409,8 @@ class WebDownloadFile(TaskProcessor):
 
         if effective_method is not None:
             result = effective_method(**parameters)
-            if result is True:
-                self._set_variables(all_ok=True, deleted=False, variable_cache=variable_cache, target_environment=target_environment)
+            if result is not None:
+                new_key_value_store = self._store_values(key_value_store=copy.deepcopy(new_key_value_store), value=result, task_id=task.task_id, command=command, context=context, log_header=log_header)
             else:
                 raise Exception('Failed to download "{}" to file "{}"'.format(url, target_file))
         else:
