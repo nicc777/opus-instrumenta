@@ -22,7 +22,7 @@ class WebDownloadFile(TaskProcessor):
             self.log(message='Headers: {}'.format(response.headers), level='debug')
             for header_name, header_value in response.headers.items():
                 if header_name.lower() == 'content-length':
-                    self.log(message='Content-Length: {}'.format(int(header_value)), level='info')
+                    self.log(message='Content-Length: {}'.format(int(header_value)), build_log_message_header=False, level='info', header=log_header)
                     return int(header_value)
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
@@ -43,7 +43,7 @@ class WebDownloadFile(TaskProcessor):
                             creds_logging = '//{}:{}@'.format(proxy_username, '*' * len(proxy_password))
                             final_proxy_str = '{}{}{}'.format(proxy_str.split('/')[0], creds, '/'.join(proxy_str.split('/')[2:]))
                             final_proxy_str_logging = '{}{}{}'.format(proxy_str.split('/')[0], creds_logging, '/'.join(proxy_str.split('/')[2:]))
-                            self.log(message='Using proxy "{}"'.format(final_proxy_str_logging), level='info')
+                            self.log(message='Using proxy "{}"'.format(final_proxy_str_logging), build_log_message_header=False, level='info', header=log_header)
                             proxies['http'] = final_proxy_str
                             proxies['https'] = final_proxy_str
         return proxies
@@ -304,47 +304,50 @@ class WebDownloadFile(TaskProcessor):
             if len(extra_headers) > 0:
                 use_custom_headers = True
         except:
-            self.log(message='extra_headers length is zero - not using custom headers', level='info')
+            self.log(message='extra_headers length is zero - not using custom headers', build_log_message_header=False, level='info', header=log_header)
 
         if 'method' in self.spec:
-            http_method = self.spec['method'].upper()
-            if http_method not in ('GET','HEAD','POST','PUT','DELETE','PATCH',):
-                self.log(message='      HTTP method "{}" not recognized. Defaulting to GET'.format(http_method), level='warning')
-                http_method = 'GET'
+            if self.spec['method'] is not None:
+                if isinstance(self.spec['method'], str) is True:
+                    http_method = self.spec['method'].upper()
+                    if http_method not in ('GET','HEAD','POST','PUT','DELETE','PATCH',):
+                        self.log(message='      HTTP method "{}" not recognized. Defaulting to GET'.format(http_method), build_log_message_header=False, level='warning', header=log_header)
+                        http_method = 'GET'
 
         if http_method != 'GET' and 'body' in self.spec:
-            http_body = self.spec['body']
+            if self.spec['body'] is not None:
+                http_body = self.spec['body']
         elif http_method == 'GET' and 'body' in self.spec:
-            self.log(message='Body cannot be set with GET requests - ignoring body content', level='warning')
+            self.log(message='Body cannot be set with GET requests - ignoring body content', build_log_message_header=False, level='warning', header=log_header)
         if http_body is not None:
             if len(http_body) > 0:
                 use_body = True
 
-        self.log(message='   * Large File                      : {}'.format(large_file), level='info')
-        self.log(message='   * Using SSL                       : {}'.format(use_ssl), level='info')
+        self.log(message='   * Large File                      : {}'.format(large_file), build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   * Using SSL                       : {}'.format(use_ssl), build_log_message_header=False, level='info', header=log_header)
         if use_ssl:
-            self.log(message='   * Skip SSL Verification           : {}'.format(not verify_ssl), level='info')
-        self.log(message='   * Using Proxy                     : {}'.format(use_proxy), level='info')
+            self.log(message='   * Skip SSL Verification           : {}'.format(not verify_ssl), build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   * Using Proxy                     : {}'.format(use_proxy), build_log_message_header=False, level='info', header=log_header)
         if use_proxy:
-            self.log(message='   * Proxy Host                      : {}'.format(proxy_host), level='info')
-            self.log(message='   * Using Proxy Authentication      : {}'.format(use_proxy_authentication), level='info')
+            self.log(message='   * Proxy Host                      : {}'.format(proxy_host), build_log_message_header=False, level='info', header=log_header)
+            self.log(message='   * Using Proxy Authentication      : {}'.format(use_proxy_authentication), build_log_message_header=False, level='info', header=log_header)
             if use_proxy_authentication is True:
-                self.log(message='   * Proxy Password Length           : {}'.format(len(proxy_password)), level='info')
-        self.log(message='   * Using HTTP Basic Authentication : {}'.format(use_http_basic_authentication), level='info')
+                self.log(message='   * Proxy Password Length           : {}'.format(len(proxy_password)), build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   * Using HTTP Basic Authentication : {}'.format(use_http_basic_authentication), build_log_message_header=False, level='info', header=log_header)
         if use_http_basic_authentication:
-            self.log(message='   * HTTP Password Length            : {}'.format(len(http_basic_authentication_password)), level='info')
+            self.log(message='   * HTTP Password Length            : {}'.format(len(http_basic_authentication_password)), build_log_message_header=False, level='info', header=log_header)
         if extra_headers is not None:
             if len(extra_headers) > 0:
-                self.log(message='   * Extra Header Keys               : {}'.format(list(extra_headers.keys())), level='info')
+                self.log(message='   * Extra Header Keys               : {}'.format(list(extra_headers.keys())), build_log_message_header=False, level='info', header=log_header)
             else:
-                self.log(message='   * Extra Header Keys               : None - Using Default Headers', level='info')
+                self.log(message='   * Extra Header Keys               : None - Using Default Headers', build_log_message_header=False, level='info', header=log_header)
         else:
-            self.log(message='   * Extra Header Keys               : None - Using Default Headers', level='info')
-        self.log(message='   * HTTP Method                     : {}'.format(http_method), level='info')
+            self.log(message='   * Extra Header Keys               : None - Using Default Headers', build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   * HTTP Method                     : {}'.format(http_method), build_log_message_header=False, level='info', header=log_header)
         if http_body is not None:
-            self.log(message='   * HTTP Body Bytes                 : {}'.format(len(http_body)), level='info')
+            self.log(message='   * HTTP Body Bytes                 : {}'.format(len(http_body)), build_log_message_header=False, level='info', header=log_header)
         else:
-            self.log(message='   * HTTP Body Bytes                 : None', level='info')
+            self.log(message='   * HTTP Body Bytes                 : None', build_log_message_header=False, level='info', header=log_header)
 
         work_values = {
             'large_file': large_file,
