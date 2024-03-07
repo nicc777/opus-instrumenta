@@ -78,8 +78,9 @@ class WebDownloadFile(TaskProcessor):
             r = requests.request(method=method, url=url, allow_redirects=True, verify=verify_ssl, proxies=proxies, auth=auth, headers=headers, data=body)
             if r:
                 http_status_code = '{}'.format(r.status_code)
-            with open(target_file, 'wb') as f:
-                f.write(r.content)
+            if r.content:
+                with open(target_file, 'wb') as f:
+                    f.write(r.content)
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
         return http_status_code
