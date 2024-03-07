@@ -125,6 +125,31 @@ class WebDownloadFile(TaskProcessor):
         new_key_value_store.save(key=final_key, value=value)
         return new_key_value_store
 
+    def _delete_output_file(
+        self,
+        kind: str,
+        task_id: str,
+        command: str,
+        context: str,
+        key_value_store: KeyValueStore=KeyValueStore(),
+        remove_target_output_file_stored_result_on_file_deletion: bool=True,
+        log_header: str=''
+    )->KeyValueStore:
+        new_key_value_store = KeyValueStore()
+        new_key_value_store.store = copy.deepcopy(key_value_store.store)
+        try:
+            if 'targetOutputFile' in self.spec:
+                if self.spec['targetOutputFile'] is not None:
+                    if isinstance(self.spec['targetOutputFile'], str):
+                        os.unlink(self.spec['targetOutputFile'])            
+        except:
+            self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
+        if remove_target_output_file_stored_result_on_file_deletion is True:
+            key = '{}:{}:{}:{}:RESULT'.format(kind,task_id,command,context)
+            if key in key_value_store.store is True:
+                new_key_value_store.store.pop(key)
+        return new_key_value_store
+
     def process_task(self, task: Task, command: str, context: str = 'default', key_value_store: KeyValueStore = KeyValueStore(), state_persistence: StatePersistence = StatePersistence()) -> KeyValueStore:
         """This task processor will download a file from a HTTP or HTTPS server.
 
