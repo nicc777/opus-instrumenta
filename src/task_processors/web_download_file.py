@@ -290,12 +290,16 @@ class WebDownloadFile(TaskProcessor):
                         use_http_basic_authentication = False
 
         if 'extraHeaders' in self.spec:
-            extra_headers = dict()
-            for header_data in self.spec['extraHeaders']:
-                if 'name' in header_data and 'value' in header_data:
-                    extra_headers[header_data['name']] = header_data['value']
-                else:
-                    self.log(message='      Ignoring extra header item as it does not contain the keys "name" and/or "value"', level='warning')
+            if self.spec['extraHeaders'] is not None:
+                if isinstance(self.spec['extraHeaders'], list) is True:
+                    extra_headers = dict()
+                    for header_data in self.spec['extraHeaders']:
+                        if header_data is not None:
+                            if isinstance(header_data, dict) is True:
+                                if 'name' in header_data and 'value' in header_data:
+                                    extra_headers[header_data['name']] = header_data['value']
+                                else:
+                                    self.log(message='      Ignoring extra header item as it does not contain the keys "name" and/or "value"', build_log_message_header=False, level='warning', header=log_header)
         try:
             if len(extra_headers) > 0:
                 use_custom_headers = True
