@@ -181,12 +181,21 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
                 "identifiers": [
                     {
                         "type": "ManifestName",
-                        "key": "{}".format(test_method_name)
+                        "key": "download"
                     },
                     {
                         "type": "Label",
                         "key": "is_unittest",
                         "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "prompt_url" },
+                            { "key": "prompt_output_path" },
+                        ]
                     }
                 ]
             },
@@ -203,19 +212,27 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
                 "identifiers": [
                     {
                         "type": "ManifestName",
-                        "key": "test_echo_hello_world_01"
+                        "key": "stats_and_cleanup"
                     },
                     {
                         "type": "Label",
                         "key": "is_unittest",
                         "value": "TRUE"
                     }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "download" },
+                        ]
+                    }
                 ]
             },
             spec={
                 'source': {
                     'type': 'inline',
-                    'value': 'echo "Hello World!"'
+                    'value': 'wc -l ${KVS:prompt_output_path:RESULT} > ${KVS:prompt_output_path:RESULT}_STATS && rm -vf ${KVS:prompt_output_path:RESULT}'
                 }
             },
             logger=self.logger
