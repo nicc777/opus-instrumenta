@@ -3,6 +3,80 @@ import re
 from opus.operarius import Hook, Task, KeyValueStore, LoggerWrapper, TaskLifecycleStage
 
 
+def is_iterable(data: object, exclude_dict: bool=True, exclude_string: bool=True)->bool:
+    if data is None:
+        return False
+    if exclude_dict is True and isinstance(data, dict):
+        return False
+    if exclude_string is True and isinstance(data, str):
+        return False
+    try:
+        iter(data)
+    except TypeError as te:
+        return False
+    return True
+
+
+def lookup_value(raw_key: str, command:str, context:str, logger:LoggerWrapper, hook_name: str, key_value_store: KeyValueStore)->object:
+    # Typical key in key_value_store     : MyKind:MyId:a_command:a_context:SubKey1:SubKey2 (SubKey1 is required, but anything afterwards is optional)
+    # Expected raw_key is something like : ${KVS:MyId:SubKey1:SubKey2}  
+    result = ''
+    if raw_key.startswith('${KVS:'):                # ${KVS:MyId:SubKey1:SubKey2}        
+        key_parts = raw_key.split(':')              # ['${KVS', 'MyId', 'SubKey1', 'SubKey2}']
+        target_task_id = key_parts[1]               # MyId
+        target_index = ':'.join(key_parts[2:])      # SubKey1:SubKey2
+        lookup_key_base = '{}:{}:{}:{}'.format(     # MyId:a_command:a_context:SubKey1:SubKey2
+            target_task_id,
+            command,
+            context,
+            target_index
+        )
+        logger.debug('[{}]       Looking for a key that looks like "{}" in key_value_store'.format(hook_name, lookup_key_base))
+        for key in list(key_value_store.store.keys()):
+            if lookup_key_base in key:
+                logger.info('[{}]     Resolved key "{}" to swap out for reference variable "{}"'.format(hook_name, key, raw_key))
+                result = copy.deepcopy(key_value_store.store[key])
+    else:
+        raise Exception('Oops - the raw key is not what we expected: raw_key: "{}"'.format(raw_key))
+    return result
+
+
+def analyse_data(data: object, key_value_store:KeyValueStore, command:str, context:str, task_id: str, logger:LoggerWrapper, hook_name: str, task_kind: str)->dict:
+    logger.info('[{}]   Analyzing data'.format(hook_name))
+    logger.debug('[{}]   Inspecting object: {}'.format(hook_name, data))
+    if data is None:
+        return data
+    modified_data = None
+    if isinstance(data, str) is True:
+        modified_data: str = copy.deepcopy(data)
+        # matches = re.findall('(\$\{KVS:[\w|\-|\s|:|.|;|_]+\})', 'wc -l ${KVS:prompt_output_path:RESULT} > ${KVS:prompt_output_path:RESULT}_STATS && rm -vf ${KVS:prompt_output_2_path:RESULT}')
+        # ['${KVS:prompt_output_path:RESULT}', '${KVS:prompt_output_path:RESULT}', '${KVS:prompt_output_2_path:RESULT}']
+        matches = re.findall('(\$\{KVS:[\w|\-|\s|:|.|;|_]+\})', data)
+        for match in matches:
+            logger.debug('[{}]     Looking up value for variable placeholder "{}"'.format(hook_name, match))
+            final_value = lookup_value(
+                raw_key=match,
+                command=command,
+                context=context,
+                logger=logger,
+                hook_name=hook_name,
+                key_value_store=key_value_store
+            )
+            modified_data = modified_data.replace(match, final_value)
+    elif isinstance(data, dict) is True:
+        modified_data: dict = dict()
+        for key, val in data.items():
+            modified_data[key] = analyse_data(data=val, key_value_store=key_value_store)
+    elif is_iterable(data=data) is True:
+        modified_data: list = list()
+        for val in data:
+            modified_data.append(analyse_data(data=val, key_value_store=key_value_store))
+    else:
+        modified_data = copy.deepcopy(data)
+
+    return modified_data
+
+
 def spec_variable_key_value_store_resolver(
     hook_name:str,
     task:Task,
@@ -32,7 +106,21 @@ def spec_variable_key_value_store_resolver(
     if 'TASK_PRE_PROCESSING_START' not in spec_modifier_key:
         return new_key_value_store
 
-    # matches = re.findall('(\$\{KVS:[\w|\-|\s|:|.|;|_]+\})', 'wc -l ${KVS:prompt_output_path:RESULT} > ${KVS:prompt_output_path:RESULT}_STATS && rm -vf ${KVS:prompt_output_2_path:RESULT}')
-    # ['${KVS:prompt_output_path:RESULT}', '${KVS:prompt_output_path:RESULT}', '${KVS:prompt_output_2_path:RESULT}']
+    logger.info('[{}] Called on TASK_PRE_PROCESSING_START hook event for task "{}"'.format(hook_name, task.task_id))
+    logger.debug('[{}] spec_modifier_key={}'.format(spec_modifier_key))
+
+    new_key_value_store.save(
+        key=spec_modifier_key,
+        value=analyse_data(
+            data=copy.deepcopy(task.spec),
+            key_value_store=key_value_store,
+            command=command,
+            context=context,
+            task_id=task.task_id,
+            logger=logger,
+            hook_name=hook_name,
+            task_kind=task.kind
+        )
+    )
 
     return new_key_value_store
