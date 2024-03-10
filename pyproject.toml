@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "opus-instrumenta"
+version = "1"
+dependencies = []
+requires-python = ">= 3.8"
+authors = [
+  {name = "Nico Coetzee", email = "nicc777@gmail.com"}
+]
+maintainers = [
+  {name = "Nico Coetzee", email = "nicc777@gmail.com"}
+]
+description = "Various implementations of hooks, processors and other classes from the main opus project."
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 3 - Alpha",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+
+  # Pick your license as you wish (see also "license" above)
+  "License :: OSI Approved :: MIT License",
+
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/nicc777/opus-instrumenta"
+Documentation = "https://github.com/nicc777/opus-instrumenta"
+Repository = "https://github.com/nicc777/opus-instrumenta"
+Issues = "https://github.com/nicc777/opus-instrumenta/issues"
+Changelog = "https://raw.githubusercontent.com/nicc777/opus-instrumenta/main/CHANGELOG.md"
+
+
+
+[project.scripts]
+spam-cli = "taskflow:app"
+
+[tool.setuptools.dynamic]
+version = {attr = "package.__version__"}
+
