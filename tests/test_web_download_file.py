@@ -11,7 +11,7 @@ print('sys.path={}'.format(sys.path))
 
 import unittest
 
-from task_processors.web_download_file import WebDownloadFile
+from opus_instrumenta.task_processors.web_download_file import WebDownloadFile
 from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore
 
 running_path = os.getcwd()
