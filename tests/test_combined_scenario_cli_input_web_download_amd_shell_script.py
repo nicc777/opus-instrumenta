@@ -14,6 +14,7 @@ import unittest
 from opus_instrumenta.task_processors.web_download_file import WebDownloadFile
 from opus_instrumenta.task_processors.cli_input_prompt_v1 import CliInputPrompt
 from opus_instrumenta.task_processors.shell_script_v1 import ShellScript
+from opus_instrumenta.molitor import build_tasks
 from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore, build_command_identifier
 
 running_path = os.getcwd()
@@ -124,7 +125,7 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
         self.logger = None
         return super().tearDown()
 
-    def test_get_file_01(self):
+    def test_calculated_task_processing_order_01(self):
         task_prompt_for_source_url = Task(
             kind='CliInputPrompt',
             version='v1',
@@ -261,22 +262,137 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
         self.assertTrue(validate_order(must_be_before_input_task_name='prompt_output_path', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_output_path to be before stats_and_cleanup')
         self.assertTrue(validate_order(must_be_before_input_task_name='download', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected download to be before stats_and_cleanup')
 
+    def test_processing_using_hooks_for_variable_substitution_01(self):
+        task_prompt_for_source_url = Task(
+            kind='CliInputPrompt',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "prompt_url"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
+            spec={
+                'promptText': 'Get a web URL for a file to download or use a default value after the timeout.',
+                'defaultValue': 'https://raw.githubusercontent.com/nicc777/py-animus-extensions/main/implementations/web-download-file-v1.py',
+                'promptCharacter': 'URL:',
+                'waitTimeoutSeconds': 5,
+            },
+            logger=self.logger
+        )
+        task_prompt_for_output_file = Task(
+            kind='CliInputPrompt',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "prompt_output_path"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
+            spec={
+                'promptText': 'Supply a destination file where you want to save this file.',
+                'defaultValue': '/tmp/output',
+                'promptCharacter': 'PATH:',
+                'waitTimeoutSeconds': 5,
+            },
+            logger=self.logger
+        )
+        task_download = Task(
+            kind='WebDownloadFile',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "download"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "prompt_url" },
+                            { "key": "prompt_output_path" },
+                        ]
+                    }
+                ]
+            },
+            spec={
+                'sourceUrl': '${KVS:prompt_url:RESULT}',
+                'targetOutputFile': '${KVS:prompt_output_path:RESULT}',
+            },
+            logger=self.logger
+        )
+        task_file_test_and_cleanup = Task(
+            kind='ShellScript',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "stats_and_cleanup"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "identifierType": "ManifestName",
+                        "identifiers": [
+                            { "key": "download" },
+                        ]
+                    }
+                ]
+            },
+            spec={
+                'source': {
+                    'type': 'inline',
+                    'value': 'wc -l ${KVS:prompt_output_path:RESULT} > ${KVS:prompt_output_path:RESULT}_STATS && rm -vf ${KVS:prompt_output_path:RESULT}'
+                }
+            },
+            logger=self.logger
+        )
 
-        # tasks.process_context(command='apply', context='unittest')
-        # tasks.state_persistence.persist_all_state()
-        # dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=test_method_name, key_value_store=tasks.key_value_store)
+        tasks = build_tasks(logger=TestLogger())
 
+        tasks.add_task(task=task_prompt_for_source_url)
+        tasks.add_task(task=task_file_test_and_cleanup)
+        tasks.add_task(task=task_download)
+        tasks.add_task(task=task_prompt_for_output_file)
 
+        processing_target_identifier = build_command_identifier(command='apply', context='unittest')
+        calculated_task_order = tasks.calculate_current_task_order(processing_target_identifier=processing_target_identifier)
+        print('***   calculated_task_order={}'.format(calculated_task_order))
+        self.assertTrue(validate_order(must_be_before_input_task_name='prompt_url', input_task_name='prompt_output_path', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_url to be before prompt_output_path')
+        self.assertTrue(validate_order(must_be_before_input_task_name='prompt_url', input_task_name='download', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_url to be before download')
+        self.assertTrue(validate_order(must_be_before_input_task_name='prompt_url', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_url to be before stats_and_cleanup')
+        self.assertTrue(validate_order(must_be_before_input_task_name='prompt_output_path', input_task_name='download', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_output_path to be before download')
+        self.assertTrue(validate_order(must_be_before_input_task_name='prompt_output_path', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_output_path to be before stats_and_cleanup')
+        self.assertTrue(validate_order(must_be_before_input_task_name='download', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected download to be before stats_and_cleanup')
 
-        # self.assertIsNotNone(tasks.key_value_store)
-        # self.assertIsNotNone(tasks.key_value_store.store)
-        # self.assertIsInstance(tasks.key_value_store, KeyValueStore)
-        # self.assertIsInstance(tasks.key_value_store.store, dict)
-        # self.assertTrue('PROCESSING_TASK:{}:apply:unittest'.format(test_method_name) in tasks.key_value_store.store)
-        # self.assertTrue('WebDownloadFile:{}:apply:unittest:RESULT'.format(test_method_name) in tasks.key_value_store.store)
-        # self.assertEqual(tasks.key_value_store.store['WebDownloadFile:{}:apply:unittest:RESULT'.format(test_method_name)], '{}'.format(expected_status_code))
-
-        # os.unlink('/tmp/output_{}.txt'.format(test_method_name))
+        tasks.process_context(command='test', context='unittest')
 
 
 if __name__ == '__main__':

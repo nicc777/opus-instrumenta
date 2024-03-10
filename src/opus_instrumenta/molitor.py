@@ -7,12 +7,26 @@ from opus_instrumenta.task_processors.shell_script_v1 import ShellScript
 from opus_instrumenta.task_processors.web_download_file import WebDownloadFile
 
 # General imports
-from opus.operarius import Hook, Hooks, TaskProcessor, Tasks, LoggerWrapper, KeyValueStore, StatePersistence
+from opus.operarius import Hook, Hooks, TaskProcessor, Tasks, LoggerWrapper, KeyValueStore, StatePersistence, TaskLifecycleStage, TaskLifecycleStages
 
 
-STANDARD_HOOKS = [
-    spec_variable_key_value_store_resolver
-]
+def build_task_lifecycle_stages(task_lifecycle_stages_list: list)->TaskLifecycleStages:
+    task_life_cycle_stages = TaskLifecycleStages(init_default_stages=False)
+    stage: TaskLifecycleStage
+    for stage in task_lifecycle_stages_list:
+        if isinstance(stage, TaskLifecycleStage):
+            task_life_cycle_stages.register_lifecycle_stage(task_life_cycle_stage=stage)
+    return task_life_cycle_stages
+
+
+STANDARD_HOOKS = {
+    'spec_variable_key_value_store_resolver': {
+        'Function': spec_variable_key_value_store_resolver,
+        'Commands': ['ALL'],
+        'Contexts': ['ALL'],
+        'TaskLifeCycleStages': build_task_lifecycle_stages(task_lifecycle_stages_list=[TaskLifecycleStage.TASK_PRE_PROCESSING_START,],)
+    },
+}
 
 
 ALL_TASK_PROCESSORS = [
@@ -22,10 +36,17 @@ ALL_TASK_PROCESSORS = [
 ]
 
 
-def build_hooks(selected_hooks: list=STANDARD_HOOKS)->Hooks:
+def build_hooks(selected_hooks: dict=STANDARD_HOOKS)->Hooks:
     hooks = Hooks()
     hook: Hook
-    for hook in selected_hooks:
+    for hook_name, hook_config in selected_hooks.items():
+        hook = Hook(
+            name=hook_name,
+            commands=hook_config['Commands'],
+            contexts=hook_config['Contexts'],
+            task_life_cycle_stages=hook_config['TaskLifeCycleStages'],
+            function_impl=hook_config['Function']
+        )
         hooks.register_hook(hook=hook)
     return hooks
 
