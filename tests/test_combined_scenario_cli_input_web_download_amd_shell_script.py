@@ -400,6 +400,9 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
             print_logger_lines(logger=self.logger)
             self.fail('Task processing caught an exception. Please review the logs.')
 
+        # TODO Test if file '/tmp/output_STATS' exists. Must have content similar to: "393 /tmp/output" (INTEGER>0, SPACE, String "/tmp/output")
+        # TODO Delete '/tmp/output_STATS'
+
 
 if __name__ == '__main__':
     unittest.main()
