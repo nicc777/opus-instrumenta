@@ -66,11 +66,11 @@ def analyse_data(data: object, key_value_store:KeyValueStore, command:str, conte
     elif isinstance(data, dict) is True:
         modified_data: dict = dict()
         for key, val in data.items():
-            modified_data[key] = analyse_data(data=val, key_value_store=key_value_store)
+            modified_data[key] = analyse_data(data=val, key_value_store=key_value_store, command=command, context=context, task_id=task_id, logger=logger, hook_name=hook_name, task_kind=task_kind)
     elif is_iterable(data=data) is True:
         modified_data: list = list()
         for val in data:
-            modified_data.append(analyse_data(data=val, key_value_store=key_value_store))
+            modified_data.append(analyse_data(data=val, key_value_store=key_value_store, command=command, context=context, task_id=task_id, logger=logger, hook_name=hook_name, task_kind=task_kind))
     else:
         modified_data = copy.deepcopy(data)
 
@@ -107,7 +107,7 @@ def spec_variable_key_value_store_resolver(
         return new_key_value_store
 
     logger.info('[{}] Called on TASK_PRE_PROCESSING_START hook event for task "{}"'.format(hook_name, task.task_id))
-    logger.debug('[{}] spec_modifier_key={}'.format(spec_modifier_key))
+    logger.debug('[{}] spec_modifier_key={}'.format(hook_name, spec_modifier_key))
 
     new_key_value_store.save(
         key=spec_modifier_key,
