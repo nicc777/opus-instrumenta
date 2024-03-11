@@ -228,8 +228,8 @@ class WebDownloadFile(TaskProcessor):
         Raises:
             Exception: As determined by the processing logic.
         """
-        self.spec = copy.deepcopy(task.original_data['spec'])
-        self.metadata = copy.deepcopy(task.original_data['metadata'])
+        self.spec = copy.deepcopy(task.spec)
+        self.metadata = copy.deepcopy(task.metadata)
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
@@ -241,32 +241,32 @@ class WebDownloadFile(TaskProcessor):
 
         url: str
         url = None
-        if 'sourceUrl' in self.spec:
-            if self.spec['sourceUrl'] is not None:
-                if isinstance(self.spec['sourceUrl'], str):
-                    url = self.spec['sourceUrl']
+        if 'sourceurl' in self.spec:
+            if self.spec['sourceurl'] is not None:
+                if isinstance(self.spec['sourceurl'], str):
+                    url = self.spec['sourceurl']
         if url is None:
             raise Exception('No "sourceUrl" found. This field is required.')
         
         target_file: str
         target_file = None
-        if 'targetOutputFile' in self.spec:
-            if self.spec['targetOutputFile'] is not None:
-                if isinstance(self.spec['targetOutputFile'], str):
-                    target_file = self.spec['targetOutputFile']
+        if 'targetoutputfile' in self.spec:
+            if self.spec['targetoutputfile'] is not None:
+                if isinstance(self.spec['targetoutputfile'], str):
+                    target_file = self.spec['targetoutputfile']
         if target_file is None:
             raise Exception('No "targetOutputFile" found. This field is required.')
 
         large_file = False
-        remote_file_size = self._get_url_content_length(url=self.spec['sourceUrl'], log_header=log_header)
+        remote_file_size = self._get_url_content_length(url=self.spec['sourceurl'], log_header=log_header)
         self.log(message='Checking if {} > 104857600...'.format(remote_file_size), build_log_message_header=False, level='info', header=log_header)
         if remote_file_size > 104857600:   # Anything larger than 100MiB is considered large and will be downloaded in chunks
             large_file = True
 
         # Check if the local file exists:
-        if os.path.exists(self.spec['targetOutputFile']) is True:
-            if Path(self.spec['targetOutputFile']).is_file() is True:
-                local_file_size = int(get_file_size(file_path=self.spec['targetOutputFile']))
+        if os.path.exists(self.spec['targetoutputfile']) is True:
+            if Path(self.spec['targetoutputfile']).is_file() is True:
+                local_file_size = int(get_file_size(file_path=self.spec['targetoutputfile']))
                 self.log(message='local_file_size={}   remote_file_size={}'.format(local_file_size, remote_file_size), build_log_message_header=False, level='info', header=log_header)
                 if local_file_size == remote_file_size:
                     return self._store_values(key_value_store=copy.deepcopy(new_key_value_store), value='n/a', task_id=task.task_id, command=command, context=context, log_header=log_header)
@@ -291,10 +291,10 @@ class WebDownloadFile(TaskProcessor):
 
         if url.lower().startswith('https'):
             use_ssl = True
-        if use_ssl is True and 'skipSslVerification' in self.spec:
-            if self.spec['skipSslVerification'] is not None:
-                if isinstance(self.spec['skipSslVerification'], bool):
-                    verify_ssl = not self.spec['skipSslVerification']
+        if use_ssl is True and 'skipsslverification' in self.spec:
+            if self.spec['skipsslverification'] is not None:
+                if isinstance(self.spec['skipsslverification'], bool):
+                    verify_ssl = not self.spec['skipsslverification']
                 else:
                     self.log(message='Found `skipSslVerification` but value is not a boolean type - ignoring', build_log_message_header=False, level='warning', header=log_header)
             else:
@@ -308,41 +308,41 @@ class WebDownloadFile(TaskProcessor):
                             if isinstance(self.spec['proxy']['host'], str) is True:
                                 use_proxy = True
                                 proxy_host = self.spec['proxy']['host']
-                                if 'basicAuthentication' in self.spec['proxy']:
-                                    if self.spec['proxy']['basicAuthentication'] is not None:
-                                        if isinstance(self.spec['proxy']['basicAuthentication'], dict) is True:
+                                if 'basicauthentication' in self.spec['proxy']:
+                                    if self.spec['proxy']['basicauthentication'] is not None:
+                                        if isinstance(self.spec['proxy']['basicauthentication'], dict) is True:
                                             use_proxy_authentication = True
-                                            if 'username' in ['proxy']['basicAuthentication']:
-                                                if self.spec['proxy']['basicAuthentication']['username'] is not None:
-                                                    if isinstance(self.spec['proxy']['basicAuthentication']['username'], str) is True:
-                                                        proxy_username = self.spec['proxy']['basicAuthentication']['username']
-                                            if 'password' in ['proxy']['basicAuthentication']:
-                                                if self.spec['proxy']['basicAuthentication']['password'] is not None:
-                                                    if isinstance(self.spec['proxy']['basicAuthentication']['password'], str) is True:
-                                                        proxy_password = self.spec['proxy']['basicAuthentication']['password']
+                                            if 'username' in ['proxy']['basicauthentication']:
+                                                if self.spec['proxy']['basicauthentication']['username'] is not None:
+                                                    if isinstance(self.spec['proxy']['basicauthentication']['username'], str) is True:
+                                                        proxy_username = self.spec['proxy']['basicauthentication']['username']
+                                            if 'password' in ['proxy']['basicauthentication']:
+                                                if self.spec['proxy']['basicauthentication']['password'] is not None:
+                                                    if isinstance(self.spec['proxy']['basicauthentication']['password'], str) is True:
+                                                        proxy_password = self.spec['proxy']['basicauthentication']['password']
                                             if proxy_password is None:
                                                 use_proxy_authentication = False
 
-        if 'httpBasicAuthentication' in self.spec:
-            if self.spec['httpBasicAuthentication'] is not None:
-                if isinstance(self.spec['httpBasicAuthentication'], dict) is True:
+        if 'httpbasicauthentication' in self.spec:
+            if self.spec['httpbasicauthentication'] is not None:
+                if isinstance(self.spec['httpbasicauthentication'], dict) is True:
                     use_http_basic_authentication = True
-                    if 'username' in self.spec['httpBasicAuthentication']:
-                        if self.spec['httpBasicAuthentication']['username'] is not None:
-                            if isinstance(self.spec['httpBasicAuthentication']['username'], dict) is True:
-                                http_basic_authentication_username = self.spec['httpBasicAuthentication']['username']
-                    if 'password' in self.spec['httpBasicAuthentication']:
-                        if self.spec['httpBasicAuthentication']['password'] is not None:
-                            if isinstance(self.spec['httpBasicAuthentication']['password'], dict) is True:
-                                http_basic_authentication_password =  self.spec['httpBasicAuthentication']['password']
+                    if 'username' in self.spec['httpbasicauthentication']:
+                        if self.spec['httpbasicauthentication']['username'] is not None:
+                            if isinstance(self.spec['httpbasicauthentication']['username'], dict) is True:
+                                http_basic_authentication_username = self.spec['httpbasicauthentication']['username']
+                    if 'password' in self.spec['httpbasicauthentication']:
+                        if self.spec['httpbasicauthentication']['password'] is not None:
+                            if isinstance(self.spec['httpbasicauthentication']['password'], dict) is True:
+                                http_basic_authentication_password =  self.spec['httpbasicauthentication']['password']
                     if http_basic_authentication_password is None or http_basic_authentication_username is None:
                         use_http_basic_authentication = False
 
-        if 'extraHeaders' in self.spec:
-            if self.spec['extraHeaders'] is not None:
-                if isinstance(self.spec['extraHeaders'], list) is True:
+        if 'extraheaders' in self.spec:
+            if self.spec['extraheaders'] is not None:
+                if isinstance(self.spec['extraheaders'], list) is True:
                     extra_headers = dict()
-                    for header_data in self.spec['extraHeaders']:
+                    for header_data in self.spec['extraheaders']:
                         if header_data is not None:
                             if isinstance(header_data, dict) is True:
                                 if 'name' in header_data and 'value' in header_data:

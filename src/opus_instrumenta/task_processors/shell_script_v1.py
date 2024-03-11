@@ -90,9 +90,9 @@ class ShellScript(TaskProcessor):
 
     def _get_work_dir(self, log_header: str='')->str:
         work_dir = tempfile.gettempdir()
-        if 'workDir' in self.spec:
-            if 'path' in self.spec['workDir']:
-                work_dir = self.spec['workDir']['path']
+        if 'workdir' in self.spec:
+            if 'path' in self.spec['workdir']:
+                work_dir = self.spec['workdir']['path']
         self.log(message='   Work directory set to "{}"'.format(work_dir), level='info', build_log_message_header=False , header=log_header)
         return work_dir
 
@@ -193,8 +193,8 @@ class ShellScript(TaskProcessor):
         task_processing_exception_raised = False
         task_processing_exception_formatted_stacktrace = ''
         try:
-            self.spec = copy.deepcopy(task.original_data['spec'])
-            self.metadata = copy.deepcopy(task.original_data['metadata'])
+            self.spec = copy.deepcopy(task.spec)
+            self.metadata = copy.deepcopy(task.metadata)
             self.log(message='spec={}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
 
             ###
@@ -203,8 +203,8 @@ class ShellScript(TaskProcessor):
             script_source = 'exit 0'
             if self._id_source() == 'inline':
                 shabang = '#!/bin/sh'
-                if 'shellInterpreter' in self.spec:
-                    shabang = self.spec['shellInterpreter']
+                if 'shellinterpreter' in self.spec:
+                    shabang = self.spec['shellinterpreter']
                     script_source = '#!/usr/bin/env {}\n\n{}'.format(
                         shabang,
                         self._load_source_from_spec()
@@ -237,18 +237,17 @@ class ShellScript(TaskProcessor):
                 value_stderr_encoding = self.__detect_encoding(input_str=result.stdout)
                 result_stderr = result.stderr
 
-                # FIXME - all keys are at the moment lower case - use original SPEC...
-                if 'convertOutputToText' in self.spec:
+                if 'convertoutputtotext' in self.spec:
                     self.log(message='      Processing "convertOutputToText"', build_log_message_header=False, level='debug', header=log_header)   
-                    if self.spec['convertOutputToText'] is True:
+                    if self.spec['convertoutputtotext'] is True:
                         if value_stdout_encoding is not None:
                             result_stdout = result_stdout.decode(value_stdout_encoding)
                         if value_stderr_encoding is not None:
                             result_stderr = result_stderr.decode(value_stderr_encoding)
 
-                if 'stripNewline' in self.spec:
+                if 'stripnewline' in self.spec:
                     self.log(message='      Processing "stripNewline"', build_log_message_header=False, level='debug', header=log_header)   
-                    if self.spec['stripNewline'] is True:
+                    if self.spec['stripnewline'] is True:
                         try:
                             if result_stdout is not None:
                                 result_stdout = result_stdout.replace('\n', '')
@@ -260,9 +259,9 @@ class ShellScript(TaskProcessor):
                             traceback.print_exc()
                             self.log(message='Could not remove newline characters after "StripNewline" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
 
-                if 'convertRepeatingSpaces' in self.spec:
+                if 'convertrepeatingspaces' in self.spec:
                     self.log(message='      Processing "convertRepeatingSpaces"', build_log_message_header=False, level='debug', header=log_header)
-                    if self.spec['convertRepeatingSpaces'] is True:
+                    if self.spec['convertrepeatingspaces'] is True:
                         try:
                             if result_stdout is not None:
                                 result_stdout = ' '.join(result_stdout.split())
@@ -272,9 +271,9 @@ class ShellScript(TaskProcessor):
                             traceback.print_exc()
                             self.log(message='Could not remove repeating whitespace characters after "ConvertRepeatingSpaces" setting was set to True', build_log_message_header=False, level='warning', header=log_header)
 
-                if 'stripLeadingTrailingSpaces' in self.spec:
+                if 'stripleadingtrailingspaces' in self.spec:
                     self.log(message='      Processing "stripLeadingTrailingSpaces"', build_log_message_header=False, level='debug', header=log_header)
-                    if self.spec['stripLeadingTrailingSpaces'] is True:
+                    if self.spec['stripleadingtrailingspaces'] is True:
                         try:
                             if result_stdout is not None:
                                 result_stdout = result_stdout.strip()

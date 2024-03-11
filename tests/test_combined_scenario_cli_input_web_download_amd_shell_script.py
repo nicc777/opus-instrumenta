@@ -398,6 +398,7 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
         except:
             # traceback.format_exc()
             print_logger_lines(logger=self.logger)
+            self.fail('Task processing caught an exception. Please review the logs.')
 
 
 if __name__ == '__main__':

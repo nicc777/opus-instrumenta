@@ -90,8 +90,8 @@ class CliInputPrompt(TaskProcessor):
         Raises:
             Exception: As determined by the processing logic.
         """
-        self.spec = copy.deepcopy(task.original_data['spec'])
-        self.metadata = copy.deepcopy(task.original_data['metadata'])
+        self.spec = copy.deepcopy(task.spec)
+        self.metadata = copy.deepcopy(task.metadata)
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
@@ -107,35 +107,51 @@ class CliInputPrompt(TaskProcessor):
         prompt_text = None
         prompt_char = '> '
         convert_empty_input_to_none_value = False
-        if 'promptText' in self.spec:
-            if self.spec['promptText'] is not None:
-                if isinstance(self.spec['promptText'], str):
-                    if len(self.spec['promptText']) > 1 and len(self.spec['promptText']) < 80:
-                        prompt_text = self.spec['promptText']
-        if 'promptCharacter' in self.spec:
-            if self.spec['promptCharacter'] is not None:
-                if isinstance(self.spec['promptCharacter'], str):
-                    if len(self.spec['promptCharacter']) > 0 and len(self.spec['promptCharacter']) < 8:
-                        prompt_char = '{} '.format(self.spec['promptCharacter'])
-        if 'defaultValue' in self.spec:
-            if self.spec['defaultValue'] is not None:
-                if isinstance(self.spec['defaultValue'], str):
-                    if len(self.spec['defaultValue']) > 1 and len(self.spec['defaultValue']) < 256:
-                        default_value = self.spec['defaultValue']
+        # IMPORTANT: Remember that all keys were converted to LOWERCASE
+        if 'prompttext' in self.spec:
+            if self.spec['prompttext'] is not None:
+                if isinstance(self.spec['prompttext'], str):
+                    if len(self.spec['prompttext']) > 1 and len(self.spec['prompttext']) < 80:
+                        prompt_text = self.spec['prompttext']
+        if 'promptcharacter' in self.spec:
+            if self.spec['promptcharacter'] is not None:
+                if isinstance(self.spec['promptcharacter'], str):
+                    if len(self.spec['promptcharacter']) > 0 and len(self.spec['promptcharacter']) < 8:
+                        prompt_char = '{} '.format(self.spec['promptcharacter'])
+        if 'defaultvalue' in self.spec:
+            if self.spec['defaultvalue'] is not None:
+                if isinstance(self.spec['defaultvalue'], str):
+                    if len(self.spec['defaultvalue']) > 1 and len(self.spec['defaultvalue']) < 256:
+                        default_value = self.spec['defaultvalue']
                         prompt_char = '[default={}] {}'.format(default_value, prompt_char)
-        if 'maskInput' in self.spec:
-            if self.spec['maskInput'] is not None:
-                if isinstance(self.spec['maskInput'], bool):
-                    mask_input = self.spec['maskInput']
-        if 'waitTimeoutSeconds' in self.spec:
-            if self.spec['waitTimeoutSeconds'] is not None:
-                if isinstance(self.spec['waitTimeoutSeconds'], int):
-                    if self.spec['waitTimeoutSeconds'] > 0 and self.spec['waitTimeoutSeconds'] < 3600:
-                        wait_timeout_seconds = self.spec['waitTimeoutSeconds']
-        if 'convertEmptyInputToNone' in self.spec:
-            if self.spec['convertEmptyInputToNone'] is not None:
-                if isinstance(self.spec['convertEmptyInputToNone'], bool):
-                    convert_empty_input_to_none_value = self.spec['convertEmptyInputToNone']
+        if 'maskinput' in self.spec:
+            if self.spec['maskinput'] is not None:
+                if isinstance(self.spec['maskinput'], bool):
+                    mask_input = self.spec['maskinput']
+        if 'waittimeoutseconds' in self.spec:
+            if self.spec['waittimeoutseconds'] is not None:
+                if isinstance(self.spec['waittimeoutseconds'], int):
+                    if self.spec['waittimeoutseconds'] > 0 and self.spec['waittimeoutseconds'] < 3600:
+                        wait_timeout_seconds = self.spec['waittimeoutseconds']
+        if 'convertemptyinputtonone' in self.spec:
+            if self.spec['convertemptyinputtonone'] is not None:
+                if isinstance(self.spec['convertemptyinputtonone'], bool):
+                    convert_empty_input_to_none_value = self.spec['convertemptyinputtonone']
+        
+        """
+            mask_input = False
+            default_value = ''
+            wait_timeout_seconds = 0
+            prompt_text = None
+            prompt_char = '> '
+            convert_empty_input_to_none_value = False
+        """
+        self.log(message='FINAL VALUE for mask_input: "{}" (type={})'.format(mask_input, type(mask_input)), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='FINAL VALUE for default_value: "{}" (type={})'.format(default_value, type(default_value)), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='FINAL VALUE for wait_timeout_seconds: "{}" (type={})'.format(wait_timeout_seconds, type(wait_timeout_seconds)), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='FINAL VALUE for prompt_text: "{}" (type={})'.format(prompt_text, type(prompt_text)), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='FINAL VALUE for prompt_char: "{}" (type={})'.format(prompt_char, type(prompt_char)), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='FINAL VALUE for convert_empty_input_to_none_value: "{}" (type={})'.format(convert_empty_input_to_none_value, type(convert_empty_input_to_none_value)), build_log_message_header=False, level='debug', header=log_header)
         
         if prompt_text is not None:
             print('{}\n'.format(prompt_text))
@@ -160,7 +176,7 @@ class CliInputPrompt(TaskProcessor):
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
             self.log(message='Using DEFAULT value', build_log_message_header=False, level='warning', header=log_header)
             value = default_value
-        self.log(message='  Storing value', build_log_message_header=False, level='info', header=log_header)
+        self.log(message='  Storing value: "{}"'.format(value), build_log_message_header=False, level='info', header=log_header)
         new_key_value_store.save(key='{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context), value=value)
 
         self.log(message='value={}'.format(value), build_log_message_header=False, level='debug', header=log_header)

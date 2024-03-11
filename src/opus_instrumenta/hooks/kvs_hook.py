@@ -42,7 +42,7 @@ def lookup_value(raw_key: str, command:str, context:str, logger:LoggerWrapper, h
                 result = copy.deepcopy(key_value_store.store[key])
     else:
         raise Exception('Oops - the raw key is not what we expected: raw_key: "{}"'.format(raw_key))
-    logger.debug('[{}]         Returning final result: {}'.format(hook_name, result))
+    logger.debug('[{}]         Returning final result: "{}"'.format(hook_name, result))
     return result
 
 
