@@ -1,4 +1,5 @@
 import os
+import json
 import traceback
 import copy
 from pathlib import Path
@@ -233,6 +234,7 @@ class WebDownloadFile(TaskProcessor):
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START', build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
         if '{}:{}:{}:{}:RESULT'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store

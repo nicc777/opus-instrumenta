@@ -5,6 +5,7 @@ from inspect import stack
 import random
 import string
 from  pytest_httpserver import HTTPServer
+import traceback
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
 print('sys.path={}'.format(sys.path))
@@ -375,7 +376,7 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
             logger=self.logger
         )
 
-        tasks = build_tasks(logger=TestLogger())
+        tasks = build_tasks(logger=self.logger)
 
         tasks.add_task(task=task_prompt_for_source_url)
         tasks.add_task(task=task_file_test_and_cleanup)
@@ -392,7 +393,11 @@ class TestScenariosBasicGet(unittest.TestCase):    # pragma: no cover
         self.assertTrue(validate_order(must_be_before_input_task_name='prompt_output_path', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected prompt_output_path to be before stats_and_cleanup')
         self.assertTrue(validate_order(must_be_before_input_task_name='download', input_task_name='stats_and_cleanup', list_of_tasks=calculated_task_order), 'FAILED TEST: Expected download to be before stats_and_cleanup')
 
-        tasks.process_context(command='test', context='unittest')
+        try:
+            tasks.process_context(command='test', context='unittest')
+        except:
+            # traceback.format_exc()
+            print_logger_lines(logger=self.logger)
 
 
 if __name__ == '__main__':

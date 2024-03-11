@@ -1,3 +1,4 @@
+import json
 import traceback
 from getpass import getpass
 import copy
@@ -28,6 +29,8 @@ def get_normal_user_input_with_timeout(prompt_char: str='> ', timeout_seconds: i
     try:
         with timeout_context(timeout_seconds):
             result = input(prompt_char)
+            if result == '':
+                result = default_value
     except TimeoutException:
         print(default_value)
     return result
@@ -38,6 +41,8 @@ def get_password_input_with_timeout(prompt_char: str='> ', timeout_seconds: int=
     try:
         with timeout_context(timeout_seconds):
             result = getpass(prompt=prompt_char)
+            if result == '':
+                result = default_value
     except TimeoutException:
         print()
     return result
@@ -91,6 +96,7 @@ class CliInputPrompt(TaskProcessor):
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START', build_log_message_header=False, level='info', header=log_header)
+        self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
         if '{}:{}:{}:{}:RESULT'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
@@ -135,16 +141,25 @@ class CliInputPrompt(TaskProcessor):
             print('{}\n'.format(prompt_text))
 
         value = None
-        if wait_timeout_seconds > 0:
-            if mask_input is True:
-                value = get_password_input_with_timeout(prompt_char=prompt_char, timeout_seconds=wait_timeout_seconds, default_value=default_value)
+        try:
+            if wait_timeout_seconds > 0:
+                if mask_input is True:
+                    value = get_password_input_with_timeout(prompt_char=prompt_char, timeout_seconds=wait_timeout_seconds, default_value=default_value)
+                else:
+                    value = get_normal_user_input_with_timeout(prompt_char=prompt_char, timeout_seconds=wait_timeout_seconds, default_value=default_value)
             else:
-                value = get_normal_user_input_with_timeout(prompt_char=prompt_char, timeout_seconds=wait_timeout_seconds, default_value=default_value)
-        else:
-            if mask_input is True:
-                value = getpass(prompt=prompt_char)
-            else:
-                value = input(prompt_char)
+                if mask_input is True:
+                    value = getpass(prompt=prompt_char)
+                    if value == '':
+                        value = default_value
+                else:
+                    value = input(prompt_char)
+                    if value == '':
+                        value = default_value
+        except:
+            self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
+            self.log(message='Using DEFAULT value', build_log_message_header=False, level='warning', header=log_header)
+            value = default_value
         self.log(message='  Storing value', build_log_message_header=False, level='info', header=log_header)
         new_key_value_store.save(key='{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context), value=value)
 
@@ -156,5 +171,6 @@ class CliInputPrompt(TaskProcessor):
         self.spec = dict()
         self.metadata = dict()
         self.log(message='DONE', build_log_message_header=False, level='info', header=log_header)
+        self.log(message='  key_value_store keys: {}'.format(list(new_key_value_store.store.keys())), level='debug', build_log_message_header=False, header=log_header)
         return new_key_value_store
 

@@ -51,10 +51,11 @@ def build_hooks(selected_hooks: dict=STANDARD_HOOKS)->Hooks:
     return hooks
 
 
-def build_task_processors(selected_task_processors: list=ALL_TASK_PROCESSORS)->list:
+def build_task_processors(selected_task_processors: list=ALL_TASK_PROCESSORS, logger: LoggerWrapper=LoggerWrapper())->list:
     task_processors = list()
     task_processor: TaskProcessor
     for task_processor in selected_task_processors:
+        task_processor.logger = logger
         task_processors.append(task_processor)
     return task_processors
 
@@ -72,7 +73,7 @@ def build_tasks(
         hooks=build_hooks(selected_hooks=selected_hooks),
         state_persistence=state_persistence
     )
-    for task_processor in build_task_processors(selected_task_processors=selected_task_processors):
+    for task_processor in build_task_processors(selected_task_processors=selected_task_processors, logger=logger):
         tasks.register_task_processor(processor=task_processor)
     return tasks
 
