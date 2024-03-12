@@ -10,7 +10,7 @@ print('sys.path={}'.format(sys.path))
 import unittest
 
 from opus_instrumenta.task_processors.shell_script_v1 import ShellScript
-from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore, build_command_identifier
+from magnum_opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore, build_command_identifier
 
 running_path = os.getcwd()
 print('Current Working Path: {}'.format(running_path))

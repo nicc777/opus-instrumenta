@@ -6,8 +6,8 @@ from pathlib import Path
 import requests
 from requests.auth import HTTPBasicAuth
 
-from opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
-from opus_adstator.file_io import get_file_size
+from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
+from magnum_opus_adstator.file_io import get_file_size
 
 
 class WebDownloadFile(TaskProcessor):

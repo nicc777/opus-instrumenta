@@ -6,7 +6,7 @@ import tempfile
 import chardet
 import os
 import json
-from opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
+from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
 
 
 class ShellScript(TaskProcessor):

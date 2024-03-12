@@ -5,7 +5,7 @@ import copy
 import signal
 import contextlib
 
-from opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
+from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
 
 
 class TimeoutException(Exception):

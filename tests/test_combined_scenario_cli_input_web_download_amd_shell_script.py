@@ -16,7 +16,7 @@ from opus_instrumenta.task_processors.web_download_file import WebDownloadFile
 from opus_instrumenta.task_processors.cli_input_prompt_v1 import CliInputPrompt
 from opus_instrumenta.task_processors.shell_script_v1 import ShellScript
 from opus_instrumenta.molitor import build_tasks
-from opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore, build_command_identifier
+from magnum_opus.operarius import LoggerWrapper, Task, Tasks, Identifier, Identifiers, IdentifierContext, IdentifierContexts, TaskProcessor, KeyValueStore, build_command_identifier
 
 running_path = os.getcwd()
 print('Current Working Path: {}'.format(running_path))

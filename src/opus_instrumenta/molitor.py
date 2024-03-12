@@ -7,7 +7,7 @@ from opus_instrumenta.task_processors.shell_script_v1 import ShellScript
 from opus_instrumenta.task_processors.web_download_file import WebDownloadFile
 
 # General imports
-from opus.operarius import Hook, Hooks, TaskProcessor, Tasks, LoggerWrapper, KeyValueStore, StatePersistence, TaskLifecycleStage, TaskLifecycleStages
+from magnum_opus.operarius import Hook, Hooks, TaskProcessor, Tasks, LoggerWrapper, KeyValueStore, StatePersistence, TaskLifecycleStage, TaskLifecycleStages
 
 
 def build_task_lifecycle_stages(task_lifecycle_stages_list: list)->TaskLifecycleStages:

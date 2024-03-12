@@ -1,6 +1,6 @@
 import copy
 import re
-from opus.operarius import Hook, Task, KeyValueStore, LoggerWrapper, TaskLifecycleStage
+from magnum_opus.operarius import Hook, Task, KeyValueStore, LoggerWrapper, TaskLifecycleStage
 
 
 def is_iterable(data: object, exclude_dict: bool=True, exclude_string: bool=True)->bool:
