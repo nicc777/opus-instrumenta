@@ -33,5 +33,5 @@ pip3 install -r requirements.txt
 Also install the latest version of [magnum-opus](https://github.com/nicc777/magnum-opus). For now, assuming you have cloned and build `opus` locally, install the `opus` library from the package in the `dist/` directory from the project directory. An example:
 
 ```shell
-pip3 install $HOME/git/opus/dist/opus-1.tar.gz
+pip3 install $HOME/git/magnum-opus/dist/magnum_opus-1.tar.gz
 ```
