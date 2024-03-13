@@ -156,10 +156,10 @@ class WebDownloadFile(TaskProcessor):
         new_key_value_store = KeyValueStore()
         new_key_value_store.store = copy.deepcopy(key_value_store.store)
         try:
-            if 'targetOutputFile' in self.spec:
-                if self.spec['targetOutputFile'] is not None:
-                    if isinstance(self.spec['targetOutputFile'], str):
-                        os.unlink(self.spec['targetOutputFile'])            
+            if 'targetoutputfile' in self.spec:
+                if self.spec['targetoutputfile'] is not None:
+                    if isinstance(self.spec['targetoutputfile'], str):
+                        os.unlink(self.spec['targetoutputfile'])            
         except:
             self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
         if remove_target_output_file_stored_result_on_file_deletion is True:
