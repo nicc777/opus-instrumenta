@@ -14,6 +14,42 @@ class WriteFile(TaskProcessor):
         self.metadata = dict()
         super().__init__(kind, kind_versions, supported_commands, logger)
 
+    def existing_file_requires_update(self, log_header: str='')->bool:
+        file_exists = False
+        raise_exception = False
+        try:
+            if os.path.exists(self.spec['targetfile']) is True:
+                if os.path.isfile(self.spec['targetfile']) is True:
+                    file_exists = True
+                else:
+                    self.log(message='Target file object "{}" exists but is NOT a file. Cannot proceed.'.format(self.spec['targetfile']), build_log_message_header=False, level='error', header=log_header)
+                    raise_exception = True   
+        except:
+            self.log(message='EXCEPTION: {}'.format(traceback.format_exc()), build_log_message_header=False, level='error', header=log_header)
+            self.log(message='Returning False (exception) - for now we will try to create the file', build_log_message_header=False, level='debug', header=log_header)
+            return False
+        
+        if raise_exception is True:
+            raise Exception('Target file object "{}" exists but is NOT a file. Cannot proceed.'.format(self.spec['targetfile']))
+
+        action_if_exists = 'overwrite'
+        if 'actioniffilealreadyexists' in self.spec:
+            if self.spec['actioniffilealreadyexists'].lower() in ('overwrite', 'skip',):
+                action_if_exists = self.spec['actioniffilealreadyexists'].lower()
+
+        self.log(message='file_exists      : {}'.format(file_exists), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='action_if_exists : {}'.format(action_if_exists), build_log_message_header=False, level='debug', header=log_header)
+
+        if file_exists is True and action_if_exists == 'overwrite':
+            self.log(message='Returning True [1]', build_log_message_header=False, level='debug', header=log_header)
+            return True
+        elif file_exists is False:
+            self.log(message='Returning True [2]', build_log_message_header=False, level='debug', header=log_header)
+            return True
+
+        self.log(message='Returning False (default)', build_log_message_header=False, level='debug', header=log_header)
+        return False
+
     def process_task(self, task: Task, command: str, context: str = 'default', key_value_store: KeyValueStore = KeyValueStore(), state_persistence: StatePersistence = StatePersistence()) -> KeyValueStore:
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START - Default Action Called - Redirect to process_task_create_action()', build_log_message_header=False, level='info', header=log_header)
