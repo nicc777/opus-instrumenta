@@ -6,7 +6,7 @@ import hashlib
 import stat
 
 from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
-from opus_adstator.file_io import get_file_size, calculate_file_checksum
+from opus_adstator.file_io import get_file_size, calculate_file_checksum, file_exists
 
 
 class WriteFile(TaskProcessor):
@@ -61,6 +61,45 @@ class WriteFile(TaskProcessor):
 
         self.log(message='Returning False (default)', build_log_message_header=False, level='debug', header=log_header)
         return False
+    
+    def _build_key_value_store_values_for_new_or_updated_file(
+        self,
+        task_id: str,
+        command: str,
+        context: str,
+        log_header: str='',
+        key_value_store: KeyValueStore = KeyValueStore(),
+    )->KeyValueStore:
+        new_key_value_store = KeyValueStore()
+        new_key_value_store.store = copy.deepcopy(key_value_store.store)
+
+        file_written = False
+        if file_exists(file=self.spec['targetfile']):
+            file_written = True
+
+        is_executable = False
+        try:
+            if file_written is True:
+                if os.access(self.spec['targetfile'], os.X_OK) is True:
+                    is_executable = True
+        except:
+            self.log(message='Could not determine if the file "{}" is executable'.format(self.spec['targetfile']), build_log_message_header=False, level='warning', header=log_header)
+            pass
+
+        size = None
+        file_checksum = None
+        if file_written is True:
+            size = get_file_size(file_path=self.spec['targetfile'])
+            file_checksum = calculate_file_checksum(file_path=self.spec['targetfile'], checksum_algorithm='sha256')
+
+        new_key_value_store.store = copy.deepcopy(key_value_store.store)
+        new_key_value_store.save(key='{}:{}:{}:{}:FILE_PATH'.format(self.kind, task_id, command, context), value=self.spec['targetfile'])
+        new_key_value_store.save(key='{}:{}:{}:{}:WRITTEN'.format(self.kind, task_id, command, context), value=file_written)
+        new_key_value_store.save(key='{}:{}:{}:{}:EXECUTABLE'.format(self.kind, task_id, command, context), value=is_executable)
+        new_key_value_store.save(key='{}:{}:{}:{}:SIZE'.format(self.kind, task_id, command, context), value=size)
+        new_key_value_store.save(key='{}:{}:{}:{}:SHA256_CHECKSUM'.format(self.kind, task_id, command, context), value=file_checksum)
+
+        return new_key_value_store
 
     def process_task(self, task: Task, command: str, context: str = 'default', key_value_store: KeyValueStore = KeyValueStore(), state_persistence: StatePersistence = StatePersistence()) -> KeyValueStore:
         log_header = self.format_log_header(task=task, command=command, context=context)
@@ -113,13 +152,13 @@ class WriteFile(TaskProcessor):
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START - Create Action', build_log_message_header=False, level='info', header=log_header)
         self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
-        if '{}:{}:{}:{}:RESULT'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
+        if '{}:{}:{}:{}:WRITTEN'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
-            return new_key_value_store
+            return self._build_key_value_store_values_for_new_or_updated_file(task_id=task.task_id, command=command, context=context, log_header=log_header, key_value_store=new_key_value_store)
 
         if self.existing_file_requires_update(log_header=log_header) is False:
             self.log(message='File already exists and checksums match - no update required.', build_log_message_header=False, level='info', header=log_header)
-            return new_key_value_store
+            return self._build_key_value_store_values_for_new_or_updated_file(task_id=task.task_id, command=command, context=context, log_header=log_header, key_value_store=new_key_value_store)
         
         try:
             os.unlink(self.spec['targetfile'])
@@ -137,11 +176,7 @@ class WriteFile(TaskProcessor):
                 os.chmod(self.spec['targetfile'], st.st_mode | stat.S_IEXEC)
                 is_executable = True
 
-        new_key_value_store.save(key='{}:{}:{}:{}:FILE_PATH'.format(self.kind, task.task_id, command, context), value=self.spec['targetfile'])
-        new_key_value_store.save(key='{}:{}:{}:{}:WRITTEN'.format(self.kind, task.task_id, command, context), value=True)
-        new_key_value_store.save(key='{}:{}:{}:{}:EXECUTABLE'.format(self.kind, task.task_id, command, context), value=is_executable)
-        new_key_value_store.save(key='{}:{}:{}:{}:SIZE'.format(self.kind, task.task_id, command, context), value=get_file_size(file_path=self.spec['targetfile']))
-        new_key_value_store.save(key='{}:{}:{}:{}:SHA256_CHECKSUM'.format(self.kind, task.task_id, command, context), value=calculate_file_checksum(file_path=self.spec['targetfile'], checksum_algorithm='sha256'))
+        new_key_value_store = self._build_key_value_store_values_for_new_or_updated_file(task_id=task.task_id, command=command, context=context, log_header=log_header, key_value_store=new_key_value_store)
 
         self.spec = dict()
         self.metadata = dict()
@@ -185,11 +220,18 @@ class WriteFile(TaskProcessor):
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START - Delete Action', build_log_message_header=False, level='info', header=log_header)
         self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
-        if '{}:{}:{}:{}:RESULT'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
+        if '{}:{}:{}:{}:DELETED'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
 
-        
+        try:
+            os.unlink(self.spec['targetfile'])
+            self.log(message='Previous file deleted', build_log_message_header=False, level='info', header=log_header)
+        except:
+            pass
+
+        new_key_value_store.save(key='{}:{}:{}:{}:FILE_PATH'.format(self.kind, task.task_id, command, context), value=self.spec['targetfile'])
+        new_key_value_store.save(key='{}:{}:{}:{}:DELETED'.format(self.kind, task.task_id, command, context), value=True)
 
         self.spec = dict()
         self.metadata = dict()
@@ -236,11 +278,15 @@ class WriteFile(TaskProcessor):
         log_header = self.format_log_header(task=task, command=command, context=context)
         self.log(message='PROCESSING START - Describe', build_log_message_header=False, level='info', header=log_header)
         self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
-        if '{}:{}:{}:{}:RESULT'.format(task.kind,task.task_id,command,context) in key_value_store.store is True:
-            self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
-            return new_key_value_store
 
-        
+        is_executable = False
+        try:
+            if os.access(self.spec['targetfile'], os.X_OK) is True:
+                is_executable = True
+        except:
+            self.log(message='Could not determine if the file "{}" is executable'.format(self.spec['targetfile']), build_log_message_header=False, level='warning', header=log_header)
+            pass
+        new_key_value_store = self._build_key_value_store_values_for_new_or_updated_file(task_id=task.task_id, command=command, context=context, log_header=log_header, key_value_store=new_key_value_store)
 
         self.spec = dict()
         self.metadata = dict()
