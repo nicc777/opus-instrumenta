@@ -2,9 +2,11 @@ import os
 import json
 import traceback
 import copy
+import hashlib
+import stat
 
 from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
-from opus_adstator.file_io import get_file_size
+from opus_adstator.file_io import get_file_size, calculate_file_checksum
 
 
 class WriteFile(TaskProcessor):
@@ -37,14 +39,24 @@ class WriteFile(TaskProcessor):
             if self.spec['actioniffilealreadyexists'].lower() in ('overwrite', 'skip',):
                 action_if_exists = self.spec['actioniffilealreadyexists'].lower()
 
-        self.log(message='file_exists      : {}'.format(file_exists), build_log_message_header=False, level='debug', header=log_header)
-        self.log(message='action_if_exists : {}'.format(action_if_exists), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='file_exists        : {}'.format(file_exists), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='action_if_exists   : {}'.format(action_if_exists), build_log_message_header=False, level='debug', header=log_header)
 
         if file_exists is True and action_if_exists == 'overwrite':
             self.log(message='Returning True [1]', build_log_message_header=False, level='debug', header=log_header)
             return True
         elif file_exists is False:
             self.log(message='Returning True [2]', build_log_message_header=False, level='debug', header=log_header)
+            return True
+
+        file_checksum = calculate_file_checksum(file_path=os.path.exists(self.spec['targetfile']), checksum_algorithm='sha256')
+        spec_data_checksum = hashlib.sha256(self.spec['data'].encode('utf-8')).hexdigest()
+        
+        self.log(message='file_checksum      : {}'.format(file_exists), build_log_message_header=False, level='debug', header=log_header)
+        self.log(message='spec_data_checksum : {}'.format(action_if_exists), build_log_message_header=False, level='debug', header=log_header)
+
+        if file_checksum != spec_data_checksum:
+            self.log(message='Returning True [3]', build_log_message_header=False, level='debug', header=log_header)
             return True
 
         self.log(message='Returning False (default)', build_log_message_header=False, level='debug', header=log_header)
@@ -105,7 +117,31 @@ class WriteFile(TaskProcessor):
             self.log(message='The task have already been processed and will now be ignored. The KeyValueStore will be returned unmodified.', build_log_message_header=False, level='warning', header=log_header)
             return new_key_value_store
 
+        if self.existing_file_requires_update(log_header=log_header) is False:
+            self.log(message='File already exists and checksums match - no update required.', build_log_message_header=False, level='info', header=log_header)
+            return new_key_value_store
         
+        try:
+            os.unlink(self.spec['targetfile'])
+            self.log(message='Previous file deleted', build_log_message_header=False, level='info', header=log_header)
+        except:
+            pass
+
+        with open(self.spec['targetFile'], 'w') as f:
+            f.write(self.spec['data'])
+
+        is_executable = False
+        if 'filemode' in self.spec:
+            if self.spec['filemode'].lower().startswith('ex'):
+                st = os.stat(self.spec['targetfile'])
+                os.chmod(self.spec['targetfile'], st.st_mode | stat.S_IEXEC)
+                is_executable = True
+
+        new_key_value_store.save(key='{}:{}:{}:{}:FILE_PATH'.format(self.kind, task.task_id, command, context), value=self.spec['targetfile'])
+        new_key_value_store.save(key='{}:{}:{}:{}:WRITTEN'.format(self.kind, task.task_id, command, context), value=True)
+        new_key_value_store.save(key='{}:{}:{}:{}:EXECUTABLE'.format(self.kind, task.task_id, command, context), value=is_executable)
+        new_key_value_store.save(key='{}:{}:{}:{}:SIZE'.format(self.kind, task.task_id, command, context), value=get_file_size(file_path=self.spec['targetfile']))
+        new_key_value_store.save(key='{}:{}:{}:{}:SHA256_CHECKSUM'.format(self.kind, task.task_id, command, context), value=calculate_file_checksum(file_path=self.spec['targetfile'], checksum_algorithm='sha256'))
 
         self.spec = dict()
         self.metadata = dict()
