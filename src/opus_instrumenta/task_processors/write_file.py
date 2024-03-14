@@ -279,13 +279,6 @@ class WriteFile(TaskProcessor):
         self.log(message='PROCESSING START - Describe', build_log_message_header=False, level='info', header=log_header)
         self.log(message='   spec: {}'.format(json.dumps(self.spec)), build_log_message_header=False, level='debug', header=log_header)
 
-        is_executable = False
-        try:
-            if os.access(self.spec['targetfile'], os.X_OK) is True:
-                is_executable = True
-        except:
-            self.log(message='Could not determine if the file "{}" is executable'.format(self.spec['targetfile']), build_log_message_header=False, level='warning', header=log_header)
-            pass
         new_key_value_store = self._build_key_value_store_values_for_new_or_updated_file(task_id=task.task_id, command=command, context=context, log_header=log_header, key_value_store=new_key_value_store)
 
         self.spec = dict()
