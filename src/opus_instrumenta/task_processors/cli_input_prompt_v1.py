@@ -233,14 +233,35 @@ class CliInputPrompt(TaskProcessor):
         key_value_store: KeyValueStore=KeyValueStore()
     )->KeyValueStore:
         """
-            See `process_task()` method
+            This task will determine the last value persisted, if any, and return the description.
         """
-        return self.process_task(
-            task=task,
-            command=command,
-            context=context,
-            key_value_store=key_value_store
+        self.spec = copy.deepcopy(task.spec)
+        self.metadata = copy.deepcopy(task.metadata)
+        new_key_value_store = KeyValueStore()
+        new_key_value_store.store = copy.deepcopy(key_value_store.store)
+
+        key = '{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context)
+        current_resource_value = ''
+        if key in new_key_value_store.store:
+            current_resource_value = new_key_value_store.store['{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context)]
+
+        new_key_value_store.save(
+            key='{}:{}:{}:{}:RESOURCE_STATE'.format(
+                task.kind,
+                task.task_id,
+                command,
+                context
+            ),
+            value=task.task_state.to_dict(
+                human_readable=True,
+                current_resolved_spec=task.spec,
+                current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
+                with_checksums=False,
+                include_applied_spec=False
+            )
         )
+
+        return new_key_value_store
     
     def process_task_update(
         self,

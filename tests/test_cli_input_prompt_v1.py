@@ -106,11 +106,35 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         print()
         print('-'*80)
         self.logger = TestLogger()
+        self.tasks = Tasks(logger=self.logger)
+        self.cli_input = CliInputPrompt(logger=self.logger)
+        self.cli_input.map_task_processing_function_name_to_commands = dict()
+        self.cli_input.link_processing_function_name_to_command(
+            processing_function_name='process_task_create',
+            commands=['apply', 'update',]
+        )
+        self.cli_input.link_processing_function_name_to_command(
+            processing_function_name='process_task_destroy',
+            commands=['delete',]
+        )
+        self.cli_input.link_processing_function_name_to_command(
+            processing_function_name='process_task_describe',
+            commands=['describe','info',]
+        )
+        self.cli_input.link_processing_function_name_to_command(
+            processing_function_name='process_task_rollback',
+            commands=['rollback',]
+        )
+        self.cli_input.link_processing_function_name_to_command(
+            processing_function_name='process_task_detect_drift',
+            commands=['drift', 'changes', 'diff',]
+        )
         return super().setUp()
 
     def tearDown(self):
         print_logger_lines(logger=self.logger)
         self.logger = None
+        self.tasks = None
         return super().tearDown()
 
     def test_echo_hello_world_default_scenario_01(self):
@@ -126,8 +150,6 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
             print('###   COMMAND:   {}'.format(scenario_command))
             print('###')
             print('#'*80)
-
-            cli_input = CliInputPrompt(logger=self.logger)
             task = Task(
                 kind='CliInputPrompt',
                 version='v1',
@@ -152,19 +174,65 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
                 },
                 logger=self.logger
             )
-            tasks = Tasks(logger=self.logger)
-            tasks.register_task_processor(processor=cli_input)
-            tasks.add_task(task=task)
-            tasks.process_context(command=scenario_command, context='unittest')
-            tasks.state_persistence.persist_all_state()
-            dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
-            self.assertIsNotNone(tasks.key_value_store)
-            self.assertIsNotNone(tasks.key_value_store.store)
-            self.assertIsInstance(tasks.key_value_store, KeyValueStore)
-            self.assertIsInstance(tasks.key_value_store.store, dict)
-            self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in tasks.key_value_store.store)
-            self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in tasks.key_value_store.store)
-            self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
+            self.tasks = Tasks(logger=self.logger)
+            self.tasks.register_task_processor(processor=self.cli_input)
+            self.tasks.add_task(task=task)
+            self.tasks.process_context(command=scenario_command, context='unittest')
+            self.tasks.state_persistence.persist_all_state()
+            dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=self.tasks.key_value_store)
+            self.assertIsNotNone(self.tasks.key_value_store)
+            self.assertIsNotNone(self.tasks.key_value_store.store)
+            self.assertIsInstance(self.tasks.key_value_store, KeyValueStore)
+            self.assertIsInstance(self.tasks.key_value_store.store, dict)
+            self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in self.tasks.key_value_store.store)
+            self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in self.tasks.key_value_store.store)
+            self.assertEqual(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
+            self.tasks = None
+            self.tasks = Tasks(logger=self.logger)
+
+    def test_echo_hello_world_describe_scenario_01(self):
+        scenario_command = 'describe'
+        print('#'*80)
+        print('###')
+        print('###   COMMAND:   {}'.format(scenario_command))
+        print('###')
+        print('#'*80)
+        task = Task(
+            kind='CliInputPrompt',
+            version='v1',
+            metadata={
+                "identifiers": [
+                    {
+                        "type": "ManifestName",
+                        "key": "test1"
+                    },
+                    {
+                        "type": "Label",
+                        "key": "is_unittest",
+                        "value": "TRUE"
+                    }
+                ]
+            },
+            spec={
+                'promptText': 'This is a test that will return "it worked!" after 2 seconds timeout',
+                'defaultValue': 'it worked!',
+                'promptCharacter': '$$',
+                'waitTimeoutSeconds': 1,
+            },
+            logger=self.logger
+        )
+        self.tasks.register_task_processor(processor=self.cli_input)
+        self.tasks.add_task(task=task)
+        self.tasks.process_context(command=scenario_command, context='unittest')
+        self.tasks.state_persistence.persist_all_state()
+        dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=self.tasks.key_value_store)
+        # self.assertIsNotNone(tasks.key_value_store)
+        # self.assertIsNotNone(tasks.key_value_store.store)
+        # self.assertIsInstance(tasks.key_value_store, KeyValueStore)
+        # self.assertIsInstance(tasks.key_value_store.store, dict)
+        # self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in tasks.key_value_store.store)
+        # self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in tasks.key_value_store.store)
+        # self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
 
 
 if __name__ == '__main__':
