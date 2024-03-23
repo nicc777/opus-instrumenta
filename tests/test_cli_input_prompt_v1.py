@@ -189,6 +189,13 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
             self.assertEqual(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
             self.tasks = None
             self.tasks = Tasks(logger=self.logger)
+            print_logger_lines(logger=self.logger)
+            self.logger.info_lines = list()
+            self.logger.warn_lines = list()
+            self.logger.debug_lines = list()
+            self.logger.critical_lines = list()
+            self.logger.error_lines = list()
+            self.logger.all_lines_in_sequence = list()
 
     def test_echo_hello_world_describe_scenario_01(self):
         scenario_command = 'describe'
