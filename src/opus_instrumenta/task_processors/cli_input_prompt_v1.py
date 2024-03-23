@@ -4,6 +4,7 @@ from getpass import getpass
 import copy
 import signal
 import contextlib
+import hashlib
 
 from magnum_opus.operarius import LoggerWrapper, TaskProcessor, KeyValueStore, Task, StatePersistence
 
@@ -190,3 +191,149 @@ class CliInputPrompt(TaskProcessor):
         self.log(message='  key_value_store keys: {}'.format(list(new_key_value_store.store.keys())), level='debug', build_log_message_header=False, header=log_header)
         return new_key_value_store
 
+    def process_task_create(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+        """
+        return self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+    
+    def process_task_destroy(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+        """
+        return self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+    
+    def process_task_describe(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+        """
+        return self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+    
+    def process_task_update(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+        """
+        return self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+    
+    def process_task_rollback(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+        """
+        return self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+    
+    def process_task_detect_drift(
+        self,
+        task: Task,
+        command: str,
+        context: str='default',
+        key_value_store: KeyValueStore=KeyValueStore()
+    )->KeyValueStore:
+        """
+            See `process_task()` method
+
+            For calculating drift, user input is requested and the provided input is treated as the resource, with the
+            checksum of the input value compared with the previous checksum to detect "resource" drift (in other words,
+            was the user input the same or different from the previous input).
+        """
+        self.spec = copy.deepcopy(task.spec)
+        self.metadata = copy.deepcopy(task.metadata)
+        new_key_value_store = self.process_task(
+            task=task,
+            command=command,
+            context=context,
+            key_value_store=key_value_store
+        )
+
+        key = '{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context)
+        current_resource_value = ''
+        if key in new_key_value_store.store:
+            current_resource_value = new_key_value_store.store['{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context)]
+
+        new_key_value_store.save(
+            key='{}:{}:{}:{}:DRIFT_RAW_DATA'.format(
+                task.kind,
+                task.task_id,
+                command,
+                context
+            ),
+            value=task.task_state.to_dict(
+                human_readable=False,
+                current_resolved_spec=task.spec,
+                current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
+                with_checksums=True,
+                include_applied_spec=True
+            )
+        )
+
+        new_key_value_store.save(
+            key='{}:{}:{}:{}:DRIFT_HUMAN_READABLE'.format(
+                task.kind,
+                task.task_id,
+                command,
+                context
+            ),
+            value=task.task_state.to_dict(
+                human_readable=False,
+                current_resolved_spec=task.spec,
+                current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
+                with_checksums=True,
+                include_applied_spec=True
+            )
+        )
+
+        return new_key_value_store

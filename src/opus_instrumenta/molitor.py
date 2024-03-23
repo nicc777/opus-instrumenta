@@ -73,7 +73,28 @@ def build_tasks(
         hooks=build_hooks(selected_hooks=selected_hooks),
         state_persistence=state_persistence
     )
+    task_processor: TaskProcessor
     for task_processor in build_task_processors(selected_task_processors=selected_task_processors, logger=logger):
+        task_processor.link_processing_function_name_to_command(
+            processing_function_name='process_task_create',
+            commands=['apply', 'update',]
+        )
+        task_processor.link_processing_function_name_to_command(
+            processing_function_name='process_task_destroy',
+            commands=['delete',]
+        )
+        task_processor.link_processing_function_name_to_command(
+            processing_function_name='process_task_describe',
+            commands=['describe','info',]
+        )
+        task_processor.link_processing_function_name_to_command(
+            processing_function_name='process_task_rollback',
+            commands=['rollback',]
+        )
+        task_processor.link_processing_function_name_to_command(
+            processing_function_name='process_task_detect_drift',
+            commands=['drift', 'changes', 'diff',]
+        )
         tasks.register_task_processor(processor=task_processor)
     return tasks
 

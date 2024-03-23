@@ -113,45 +113,58 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.logger = None
         return super().tearDown()
 
-    def test_echo_hello_world_01(self):
-        cli_input = CliInputPrompt(logger=self.logger)
-        task = Task(
-            kind='CliInputPrompt',
-            version='v1',
-            metadata={
-                "identifiers": [
-                    {
-                        "type": "ManifestName",
-                        "key": "test1"
-                    },
-                    {
-                        "type": "Label",
-                        "key": "is_unittest",
-                        "value": "TRUE"
-                    }
-                ]
-            },
-            spec={
-                'promptText': 'This is a test that will return "it worked!" after 2 seconds timeout',
-                'defaultValue': 'it worked!',
-                'promptCharacter': '$$',
-                'waitTimeoutSeconds': 2,
-            },
-            logger=self.logger
+    def test_echo_hello_world_default_scenario_01(self):
+        scenario_commands_running_default_process = (
+            'apply',
+            'update',
+            'delete',
+            'rollback',
         )
-        tasks = Tasks(logger=self.logger)
-        tasks.register_task_processor(processor=cli_input)
-        tasks.add_task(task=task)
-        tasks.process_context(command='apply', context='unittest')
-        tasks.state_persistence.persist_all_state()
-        dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
-        self.assertIsNotNone(tasks.key_value_store)
-        self.assertIsNotNone(tasks.key_value_store.store)
-        self.assertIsInstance(tasks.key_value_store, KeyValueStore)
-        self.assertIsInstance(tasks.key_value_store.store, dict)
-        self.assertTrue('PROCESSING_TASK:test1:apply:unittest' in tasks.key_value_store.store)
-        self.assertTrue('CliInputPrompt:test1:apply:unittest:RESULT' in tasks.key_value_store.store)
-        self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:apply:unittest:RESULT'], 'it worked!')
+        for scenario_command in scenario_commands_running_default_process:
+            print('#'*80)
+            print('###')
+            print('###   COMMAND:   {}'.format(scenario_command))
+            print('###')
+            print('#'*80)
+
+            cli_input = CliInputPrompt(logger=self.logger)
+            task = Task(
+                kind='CliInputPrompt',
+                version='v1',
+                metadata={
+                    "identifiers": [
+                        {
+                            "type": "ManifestName",
+                            "key": "test1"
+                        },
+                        {
+                            "type": "Label",
+                            "key": "is_unittest",
+                            "value": "TRUE"
+                        }
+                    ]
+                },
+                spec={
+                    'promptText': 'This is a test that will return "it worked!" after 2 seconds timeout',
+                    'defaultValue': 'it worked!',
+                    'promptCharacter': '$$',
+                    'waitTimeoutSeconds': 1,
+                },
+                logger=self.logger
+            )
+            tasks = Tasks(logger=self.logger)
+            tasks.register_task_processor(processor=cli_input)
+            tasks.add_task(task=task)
+            tasks.process_context(command=scenario_command, context='unittest')
+            tasks.state_persistence.persist_all_state()
+            dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=tasks.key_value_store)
+            self.assertIsNotNone(tasks.key_value_store)
+            self.assertIsNotNone(tasks.key_value_store.store)
+            self.assertIsInstance(tasks.key_value_store, KeyValueStore)
+            self.assertIsInstance(tasks.key_value_store.store, dict)
+            self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in tasks.key_value_store.store)
+            self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in tasks.key_value_store.store)
+            self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
 
 
 if __name__ == '__main__':

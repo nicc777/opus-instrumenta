@@ -2,13 +2,19 @@
     "cSpell.words": [
         "adstator",
         "chardet",
+        "convertemptyinputtonone",
         "creds",
+        "defaultvalue",
         "instrumenta",
+        "maskinput",
         "molitor",
         "operarius",
+        "promptcharacter",
+        "prompttext",
         "shabang",
         "SIGALRM",
-        "signum"
+        "signum",
+        "waittimeoutseconds"
     ],
     "python.testing.unittestArgs": [
         "-v",
