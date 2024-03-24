@@ -233,13 +233,63 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.tasks.process_context(command=scenario_command, context='unittest')
         self.tasks.state_persistence.persist_all_state()
         dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=self.tasks.key_value_store)
-        # self.assertIsNotNone(tasks.key_value_store)
-        # self.assertIsNotNone(tasks.key_value_store.store)
-        # self.assertIsInstance(tasks.key_value_store, KeyValueStore)
-        # self.assertIsInstance(tasks.key_value_store.store, dict)
-        # self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in tasks.key_value_store.store)
-        # self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in tasks.key_value_store.store)
-        # self.assertEqual(tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
+
+        self.assertIsNotNone(self.tasks.key_value_store)
+        self.assertIsNotNone(self.tasks.key_value_store.store)
+        self.assertIsInstance(self.tasks.key_value_store, KeyValueStore)
+        self.assertIsInstance(self.tasks.key_value_store.store, dict)
+        self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertEqual(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], '')
+        self.assertTrue('CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertIsInstance(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command)], dict)
+        state_result = copy.deepcopy(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command)])
+        expected_state_result_attributes = [
+            {
+                'KeyName': 'Label',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'test1',
+            },
+            {
+                'KeyName': 'IsCreated',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'No',
+            },
+            {
+                'KeyName': 'CreatedTimestamp',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': '-',
+            },
+            {
+                'KeyName': 'SpecDrifted',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'Yes',
+            },
+            {
+                'KeyName': 'ResourceDrifted',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'Unknown',
+            }
+        ]
+        for validation_data in expected_state_result_attributes:
+            state_result_key = validation_data['KeyName']
+            if validation_data['KeyMustBePresent'] is True:
+                self.assertTrue(state_result_key in state_result)
+            if state_result_key in state_result is True:
+                self.assertIsInstance(state_result[state_result_key], validation_data['ValueType'])
+            if validation_data['ValueCanBeNone'] is False:
+                self.assertIsNotNone(state_result[state_result_key])
+            self.assertEqual(state_result[state_result_key], validation_data['ExpectedValue'])
 
 
 if __name__ == '__main__':

@@ -79,7 +79,7 @@ class CliInputPrompt(TaskProcessor):
 
     An example key: `CliInputPrompt:get-user-input:apply:sandbox:RESULT`
 
-    | Result Keys            | Default `opus-instrumenta` Actions             | Task Process Methods                                                   | Notes                                                                              |
+    | Result Keys            | Scoped `opus-instrumenta` Actions              | Task Process Methods                                                   | Notes                                                                              |
     |:----------------------:|------------------------------------------------|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
     | `RESULT`               | `apply`,`update`,`delete`, `rollback`          | `process_task_create`, `process_task_destroy`, `process_task_rollback` | Value from the user's input, or the default value if the `waitTimeout` was reached |
     | `RESULT`               | `describe`, `info`, `drift`, `changes`, `diff` | `process_task_describe`, `process_task_detect_drift`                   | Value of the previously applied user input. Can be empty or `NoneType`             |
@@ -297,6 +297,16 @@ class CliInputPrompt(TaskProcessor):
         current_resource_value = ''
         if key in new_key_value_store.store:
             current_resource_value = new_key_value_store.store['{}:{}:{}:{}:RESULT'.format(task.kind, task.task_id, command, context)]
+        else:
+            new_key_value_store.save(
+                key='{}:{}:{}:{}:RESULT'.format(
+                    task.kind,
+                    task.task_id,
+                    command,
+                    context
+                ),
+                value=current_resource_value
+            )    
 
         new_key_value_store.save(
             key='{}:{}:{}:{}:RESOURCE_STATE'.format(
