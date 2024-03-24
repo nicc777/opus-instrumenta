@@ -7,7 +7,7 @@ name = "opus-instrumenta"
 version = "2"
 dependencies = [
   "opus-adstator",
-  "magnum-opus==2"
+  "magnum-opus==2.1"
 ]
 requires-python = ">= 3.10"
 authors = [

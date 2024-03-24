@@ -7,4 +7,4 @@ build
 twine
 pytest-httpserver
 opus-adstator
-magnum-opus==2
+magnum-opus==2.1
