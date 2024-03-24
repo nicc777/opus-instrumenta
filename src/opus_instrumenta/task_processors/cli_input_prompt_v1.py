@@ -79,10 +79,45 @@ class CliInputPrompt(TaskProcessor):
 
     An example key: `CliInputPrompt:get-user-input:apply:sandbox:RESULT`
 
-    | Result Keys                | Actions                   | Notes                                                                              |
-    |:--------------------------:|---------------------------|------------------------------------------------------------------------------------|
-    | `RESULT`                   | `apply`,`update`,`delete` | Value from the user's input, or the default value if the `waitTimeout` was reached |
+    | Result Keys            | Default `opus-instrumenta` Actions             | Task Process Methods                                                   | Notes                                                                              |
+    |:----------------------:|------------------------------------------------|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+    | `RESULT`               | `apply`,`update`,`delete`, `rollback`          | `process_task_create`, `process_task_destroy`, `process_task_rollback` | Value from the user's input, or the default value if the `waitTimeout` was reached |
+    | `RESULT`               | `describe`, `info`, `drift`, `changes`, `diff` | `process_task_describe`, `process_task_detect_drift`                   | Value of the previously applied user input. Can be empty or `NoneType`             |
+    | `RESOURCE_STATE`       | `describe`, `info`                             | `process_task_describe`                                                | See below                                                                          |
+    | `DRIFT_RAW_DATA`       | `drift`, `changes`, `diff`                     | `process_task_detect_drift`                                            | See below                                                                          |
+    | `DRIFT_HUMAN_READABLE` | `drift`, `changes`, `diff`                     | `process_task_detect_drift`                                            | See below                                                                          |
 
+    ## `RESOURCE_STATE` data structure
+
+    The following dict will be returned:
+
+    ```python
+    {
+        'Label': 'STRING',
+        'IsCreated': 'Yes|No',
+        'CreatedTimestamp': '-|DATE_AND_TIME',
+        'SpecDrifted': 'Yes|No',
+        'ResourceDrifted': 'Unknown|Yes|No'
+    }
+    ```
+
+    Fields Descriptions:
+
+    | Field Name         | Type   | Description                                                                                                                                                                      |
+    |--------------------|:------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `Label`            | STRING | Name of the Task, as defined in the `Task.task_id` attribute                                                                                                                     |
+    | `IsCreated`        | STRING | If the user previously supplied input that was recovered via persistance, the value of this field will be `Yes`                                                                  |
+    | `CreatedTimestamp` | STRING | If `IsCreated` is "Yes", this field will contain the human readable date and time the user input was last collected                                                              |
+    | `SpecDrifted`      | STRING | If the current spec checksum differs from the previously applied one, this value will be a `Yes`. It will also be `Yes` if the task has not yet been processed before.           |
+    | `ResourceDrifted`  | STRING | If the current `RESULT` checksum differs from the previously applied one, this value will be a `Yes`. The value will be `Unknown` if the task has not yet been processed before. |
+
+    ## `DRIFT_RAW_DATA` data structure
+
+    TODO
+
+    ## `DRIFT_HUMAN_READABLE` data structure
+
+    TODO
     """
 
     def __init__(self, kind: str='CliInputPrompt', kind_versions: list=['v1',], supported_commands: list = list(), logger: LoggerWrapper = LoggerWrapper()):
