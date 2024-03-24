@@ -50,6 +50,40 @@ def get_password_input_with_timeout(prompt_char: str='> ', timeout_seconds: int=
 
 
 class CliInputPrompt(TaskProcessor):
+    """
+    # Spec fields
+
+    Root levels spec fields
+
+    | Field                         | Type    | Required | In Versions | Description                                                                                                                                                                                                          |
+    |-------------------------------|:-------:|:--------:|:-----------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `promptText`                  | String  | No       | v1          | The text to display on screen. If set, must be a string with minimum length of 2 and less then 80 characters.                                                                                                        |
+    | `defaultValue`                | String  | No       | v1          | If defined, this will be the default value a user can choose by just pressing ENTER, or it will also be the value used after the `waitTimeout` expires.                                                              |
+    | `promptCharacter`             | String  | No       | v1          | The character for the actual prompt. If set, must be a string with minimum length of 1 and less then 8 characters.                                                                                                   |
+    | `waitTimeoutSeconds`          | Integer | No       | v1          | Default is "0" (do not expire - wait forever). Any value >0 but <3600 (1 hour) will wait for user input. When the timeout is reached, the default value will be used.                                                |
+    | `convertEmptyInputToNone`     | Boolean | No       | v1          | If input is empty, convert the final value to NoneType                                                                                                                                                               |
+    | `maskInput`                   | Boolean | No       | v1          | If true, do not echo characters. This is suitable to ask for a password, for example                                                                                                                                 |
+
+    # Return Values
+    
+    Task processing return values in an updated `KeyValueStore` is described below and covers all all variations of
+    `process_task()` method.
+
+    The `key` is a colon separated string made up of the following elements:
+
+    * Task Kind - Value of `task.kind`
+    * Task ID - Value of `task.task_id`
+    * Command - The command option used when requesting task processing
+    * Context - The context option used when requesting task processing
+    * Client Specific Result Key - Certain processing actions can produce more than one result key
+
+    An example key: `CliInputPrompt:get-user-input:apply:sandbox:RESULT`
+
+    | Result Keys                | Actions                   | Notes                                                                              |
+    |:--------------------------:|---------------------------|------------------------------------------------------------------------------------|
+    | `RESULT`                   | `apply`,`update`,`delete` | Value from the user's input, or the default value if the `waitTimeout` was reached |
+
+    """
 
     def __init__(self, kind: str='CliInputPrompt', kind_versions: list=['v1',], supported_commands: list = list(), logger: LoggerWrapper = LoggerWrapper()):
         self.spec = dict()
@@ -62,20 +96,6 @@ class CliInputPrompt(TaskProcessor):
         
         Regardless of command and context, the specified shell script will be run, unless specifically excluded.
 
-        # Spec fields
-
-        Root levels spec fields
-
-        | Field                         | Type    | Required | In Versions | Description                                                                                                                                                                                                          |
-        |-------------------------------|:-------:|:--------:|:-----------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-        | `promptText`                  | String  | No       | v1          | The text to display on screen. If set, must be a string with minimum length of 2 and less then 80 characters.                                                                                                        |
-        | `defaultValue`                | String  | No       | v1          | If defined, this will be the default value a user can choose by just pressing ENTER, or it will also be the value used after the `waitTimeout` expires.                                                              |
-        | `promptCharacter`             | String  | No       | v1          | The character for the actual prompt. If set, must be a string with minimum length of 1 and less then 8 characters.                                                                                                   |
-        | `waitTimeoutSeconds`          | Integer | No       | v1          | Default is "0" (do not expire - wait forever). Any value >0 but <3600 (1 hour) will wait for user input. When the timeout is reached, the default value will be used.                                                |
-        | `convertEmptyInputToNone`     | Boolean | No       | v1          | If input is empty, convert the final value to NoneType                                                                                                                                                               |
-        | `maskInput`                   | Boolean | No       | v1          | If true, do not echo characters. This is suitable to ask for a password, for example                                                                                                                                 |
-
-
         Args:
             task: The `Task` of kind `ShellScript` version `v1` to process
             command: The command is ignored for ShellScript processing - any task of this kind will ALWAYS be processed regardless of the command.
@@ -84,9 +104,7 @@ class CliInputPrompt(TaskProcessor):
             state_persistence: An implementation of `StatePersistence` that the task processor can use to retrieve previous copies of the `Task` manifest in order to determine the actions to be performed.
 
         Returns:
-            An updated `KeyValueStore`.
-
-            * Value from the user's input, or the default value if the `waitTimeout` was reached: `task.kind:task.task_id:command:context:RESULT`
+            As per the return values explained in the class doc.
 
         Raises:
             Exception: As determined by the processing logic.
