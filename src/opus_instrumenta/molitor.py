@@ -1,3 +1,9 @@
+from pathlib import Path
+import os
+
+# Persistence
+from opus_instrumenta.persistence.file_based_state_persistence import FileBasedStatePersistence
+
 # Hooks
 from opus_instrumenta.hooks.kvs_hook import spec_variable_key_value_store_resolver
 
@@ -51,11 +57,27 @@ def build_hooks(selected_hooks: dict=STANDARD_HOOKS)->Hooks:
     return hooks
 
 
-def build_task_processors(selected_task_processors: list=ALL_TASK_PROCESSORS, logger: LoggerWrapper=LoggerWrapper())->list:
+def build_file_based_state_persistence_instance(file: str=None, logger: LoggerWrapper=LoggerWrapper())->StatePersistence:
+    if file is None:
+        home_dir = str(Path.home())
+        opus_configuration_directory = '{}{}.opus'.format(home_dir, os.sep)
+        file = '{}{}persistence_data.json'.format(opus_configuration_directory, os.sep)
+        if os.path.exists(opus_configuration_directory) is False:
+            os.mkdir(path=opus_configuration_directory)
+    return FileBasedStatePersistence(logger=logger, configuration={'StateFile': file})
+
+
+
+def build_task_processors(
+    selected_task_processors: list=ALL_TASK_PROCESSORS,
+    logger: LoggerWrapper=LoggerWrapper(),
+    state_persistence: StatePersistence=StatePersistence()
+)->list:
     task_processors = list()
     task_processor: TaskProcessor
     for task_processor in selected_task_processors:
         task_processor.logger = logger
+        task_processor.state_persistence = state_persistence
         task_processors.append(task_processor)
     return task_processors
 
@@ -74,7 +96,11 @@ def build_tasks(
         state_persistence=state_persistence
     )
     task_processor: TaskProcessor
-    for task_processor in build_task_processors(selected_task_processors=selected_task_processors, logger=logger):
+    for task_processor in build_task_processors(
+        selected_task_processors=selected_task_processors,
+        logger=logger,
+        state_persistence=state_persistence
+    ):
         task_processor.link_processing_function_name_to_command(
             processing_function_name='process_task_create',
             commands=['apply', 'update',]
