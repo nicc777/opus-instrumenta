@@ -412,7 +412,7 @@ class CliInputPrompt(TaskProcessor):
                 context
             ),
             value=task.task_state.to_dict(
-                human_readable=False,
+                human_readable=True,
                 current_resolved_spec=task.spec,
                 current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
                 with_checksums=True,
