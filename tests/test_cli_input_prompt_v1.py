@@ -271,14 +271,14 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
                 'KeyMustBePresent': True,
                 'ValueType': str,
                 'ValueCanBeNone': False,
-                'ExpectedValue': 'Yes',
+                'ExpectedValue': 'N/A',
             },
             {
                 'KeyName': 'ResourceDrifted',
                 'KeyMustBePresent': True,
                 'ValueType': str,
                 'ValueCanBeNone': False,
-                'ExpectedValue': 'Unknown',
+                'ExpectedValue': 'N/A',
             }
         ]
         for validation_data in expected_state_result_attributes:
