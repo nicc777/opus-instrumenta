@@ -397,7 +397,7 @@ class CliInputPrompt(TaskProcessor):
             ),
             value=task.task_state.to_dict(
                 human_readable=False,
-                current_resolved_spec=task.spec,
+                current_resolved_spec=self.spec,
                 current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
                 with_checksums=True,
                 include_applied_spec=True
@@ -413,7 +413,7 @@ class CliInputPrompt(TaskProcessor):
             ),
             value=task.task_state.to_dict(
                 human_readable=True,
-                current_resolved_spec=task.spec,
+                current_resolved_spec=self.spec,
                 current_resource_checksum=hashlib.sha256(current_resource_value.encode('utf-8')).hexdigest(),
                 with_checksums=True,
                 include_applied_spec=True

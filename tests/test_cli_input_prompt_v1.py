@@ -328,15 +328,20 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.tasks.state_persistence.persist_all_state()
         dump_key_value_store(test_class_name=self.__class__.__name__, test_method_name=stack()[0][3], key_value_store=self.tasks.key_value_store)
 
-        # self.assertIsNotNone(self.tasks.key_value_store)
-        # self.assertIsNotNone(self.tasks.key_value_store.store)
-        # self.assertIsInstance(self.tasks.key_value_store, KeyValueStore)
-        # self.assertIsInstance(self.tasks.key_value_store.store, dict)
-        # self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in self.tasks.key_value_store.store)
-        # self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in self.tasks.key_value_store.store)
-        # self.assertEqual(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], '')
-        # self.assertTrue('CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command) in self.tasks.key_value_store.store)
-        # self.assertIsInstance(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command)], dict)
+        self.assertIsNotNone(self.tasks.key_value_store)
+        self.assertIsNotNone(self.tasks.key_value_store.store)
+        self.assertIsInstance(self.tasks.key_value_store, KeyValueStore)
+        self.assertIsInstance(self.tasks.key_value_store.store, dict)
+        self.assertTrue('PROCESSING_TASK:test1:{}:unittest'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertTrue('CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertEqual(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESULT'.format(scenario_command)], 'it worked!')
+
+        self.assertTrue('CliInputPrompt:test1:{}:unittest:DRIFT_RAW_DATA'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertIsInstance(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:DRIFT_RAW_DATA'.format(scenario_command)], dict)
+        
+        self.assertTrue('CliInputPrompt:test1:{}:unittest:DRIFT_HUMAN_READABLE'.format(scenario_command) in self.tasks.key_value_store.store)
+        self.assertIsInstance(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:DRIFT_HUMAN_READABLE'.format(scenario_command)], dict)
+        
         # state_result = copy.deepcopy(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command)])
         # expected_state_result_attributes = [
         #     {
