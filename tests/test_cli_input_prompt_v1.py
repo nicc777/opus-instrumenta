@@ -342,53 +342,88 @@ class TestScenariosInLine(unittest.TestCase):    # pragma: no cover
         self.assertTrue('CliInputPrompt:test1:{}:unittest:DRIFT_HUMAN_READABLE'.format(scenario_command) in self.tasks.key_value_store.store)
         self.assertIsInstance(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:DRIFT_HUMAN_READABLE'.format(scenario_command)], dict)
         
-        # state_result = copy.deepcopy(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:RESOURCE_STATE'.format(scenario_command)])
-        # expected_state_result_attributes = [
-        #     {
-        #         'KeyName': 'Label',
-        #         'KeyMustBePresent': True,
-        #         'ValueType': str,
-        #         'ValueCanBeNone': False,
-        #         'ExpectedValue': 'test1',
-        #     },
-        #     {
-        #         'KeyName': 'IsCreated',
-        #         'KeyMustBePresent': True,
-        #         'ValueType': str,
-        #         'ValueCanBeNone': False,
-        #         'ExpectedValue': 'No',
-        #     },
-        #     {
-        #         'KeyName': 'CreatedTimestamp',
-        #         'KeyMustBePresent': True,
-        #         'ValueType': str,
-        #         'ValueCanBeNone': False,
-        #         'ExpectedValue': '-',
-        #     },
-        #     {
-        #         'KeyName': 'SpecDrifted',
-        #         'KeyMustBePresent': True,
-        #         'ValueType': str,
-        #         'ValueCanBeNone': False,
-        #         'ExpectedValue': 'Yes',
-        #     },
-        #     {
-        #         'KeyName': 'ResourceDrifted',
-        #         'KeyMustBePresent': True,
-        #         'ValueType': str,
-        #         'ValueCanBeNone': False,
-        #         'ExpectedValue': 'Unknown',
-        #     }
-        # ]
-        # for validation_data in expected_state_result_attributes:
-        #     state_result_key = validation_data['KeyName']
-        #     if validation_data['KeyMustBePresent'] is True:
-        #         self.assertTrue(state_result_key in state_result)
-        #     if state_result_key in state_result is True:
-        #         self.assertIsInstance(state_result[state_result_key], validation_data['ValueType'])
-        #     if validation_data['ValueCanBeNone'] is False:
-        #         self.assertIsNotNone(state_result[state_result_key])
-        #     self.assertEqual(state_result[state_result_key], validation_data['ExpectedValue'])
+        state_result = copy.deepcopy(self.tasks.key_value_store.store['CliInputPrompt:test1:{}:unittest:DRIFT_RAW_DATA'.format(scenario_command)])
+        expected_state_result_attributes = [
+            {
+                'KeyName': 'Label',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'test1',
+            },
+            {
+                'KeyName': 'IsCreated',
+                'KeyMustBePresent': True,
+                'ValueType': bool,
+                'ValueCanBeNone': False,
+                'ExpectedValue': False,
+            },
+            {
+                'KeyName': 'CreatedTimestamp',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'SpecDrifted',
+                'KeyMustBePresent': True,
+                'ValueType': bool,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'ResourceDrifted',
+                'KeyMustBePresent': True,
+                'ValueType': bool,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'AppliedSpecChecksum',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'CurrentResolvedSpecChecksum',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': False,
+                'ExpectedValue': 'bddad0618bbb591ce36174ec6a8f825d5fe8bd04c15c9f8e88a70ab78ab70e82',
+            },
+            {
+                'KeyName': 'AppliedResourcesChecksum',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'CurrentResourceChecksum',
+                'KeyMustBePresent': True,
+                'ValueType': str,
+                'ValueCanBeNone': True,
+                'ExpectedValue': None,
+            },
+            {
+                'KeyName': 'AppliedSpec',
+                'KeyMustBePresent': True,
+                'ValueType': dict,
+                'ValueCanBeNone': False,
+                'ExpectedValue': {},
+            },
+        ]
+        for validation_data in expected_state_result_attributes:
+            state_result_key = validation_data['KeyName']
+            if validation_data['KeyMustBePresent'] is True:
+                self.assertTrue(state_result_key in state_result)
+            if state_result_key in state_result is True:
+                self.assertIsInstance(state_result[state_result_key], validation_data['ValueType'])
+            if validation_data['ValueCanBeNone'] is False:
+                self.assertIsNotNone(state_result[state_result_key])
+            self.assertEqual(state_result[state_result_key], validation_data['ExpectedValue'])
 
 
 if __name__ == '__main__':
